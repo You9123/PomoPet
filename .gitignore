@@ -1,0 +1,16 @@
+# Secretos y entornos
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# Editores y sistema
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
