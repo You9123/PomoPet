@@ -13,6 +13,8 @@ Proyecto de Paradigmas de Programación, UNA, II Semestre 2026.
 
 ## Cómo correrlo
 
+> **Windows:** Docker Desktop requiere WSL 2. Instalarlo con `wsl --install` en PowerShell (Administrador) y reiniciar.
+
 ```bash
 cp .env.example .env
 docker compose up --build      # BD + API en http://localhost:8000/docs
