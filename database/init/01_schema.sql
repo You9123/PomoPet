@@ -42,7 +42,7 @@ CREATE TABLE jefes_finales (
 );
 CREATE INDEX jefes_finales_materia_idx ON jefes_finales (materia_id);
 
--- ---------- Sesiones ----------
+-- ---------- SESIONES ----------
 
 CREATE TABLE sesiones (
     id            SERIAL PRIMARY KEY,
@@ -63,3 +63,21 @@ CREATE TABLE sesiones (
 );
 CREATE INDEX sesiones_materia_idx ON sesiones (materia_id);
 CREATE INDEX sesiones_jefe_idx ON sesiones (jefe_id);
+
+-- ---------- LOGROS ----------
+
+-- Catálogo: la lista de logros que existen en el juego
+CREATE TABLE logros (
+    id          SERIAL PRIMARY KEY,
+    codigo      VARCHAR(50)  NOT NULL UNIQUE,
+    nombre      VARCHAR(100) NOT NULL,
+    descripcion TEXT         NOT NULL
+);
+
+-- Qué logros ha desbloqueado cada usuario (relación muchos a muchos)
+CREATE TABLE logros_usuario (
+    usuario_id  INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    logro_id    INT NOT NULL REFERENCES logros(id)   ON DELETE CASCADE,
+    obtenido_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (usuario_id, logro_id)
+);
