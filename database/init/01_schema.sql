@@ -1,17 +1,27 @@
+-- =========================================================
+-- PomoPet - Modelo de datos (PostgreSQL 16)
+-- =========================================================
+
+-- ---------- USUARIOS ----------
+
 CREATE TABLE usuarios (
     id            SERIAL PRIMARY KEY,
-    correo        VARCHAR(255) NOT NULL UNIQUE,
+    correo        VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,          -- RNF-05: nunca texto plano
     creado_en     TIMESTAMPTZ  NOT NULL DEFAULT now()
+    CONSTRAINT correo_formato CHECK (correo ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$')
 );
+-- Correo único sin importar mayúsculas (Ana@UNA.ac.cr = ana@una.ac.cr)
+CREATE UNIQUE INDEX usuarios_correo_unico ON usuarios (LOWER(correo));
+-- ---------- MATERIAS ----------
 
 CREATE TABLE materias (
     id              SERIAL PRIMARY KEY,
     usuario_id      INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-    nombre          VARCHAR(100) NOT NULL,
-    color           CHAR(7) NOT NULL DEFAULT '#888888',
-    horas_semanales SMALLINT CHECK (horas_semanales >= 0),
-    xp              INT NOT NULL DEFAULT 0 CHECK (xp >= 0),
+    nombre          VARCHAR(100) NOT NULL CHECK (length(trim(nombre)) > 0),
+    color           CHAR(7) NOT NULL DEFAULT '#888888' CHECK (color ~ '^#[0-9A-Fa-f]{6}$'),
+    horas_semanales SMALLINT CHECK (horas_semanales BETWEEN 0 AND 168),
+    creado_en       TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (usuario_id, nombre)
 );
 
