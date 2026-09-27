@@ -81,3 +81,39 @@ CREATE TABLE logros_usuario (
     obtenido_en TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (usuario_id, logro_id)
 );
+
+-- ---------- TRIGGER ----------
+-- ---------- RF-02: tope de 20 materias por usuario ----------
+
+CREATE FUNCTION validar_tope_materias() RETURNS trigger AS $$
+BEGIN
+    -- bloquea al usuario para que dos inserts simultáneos no pasen ambos
+    PERFORM 1 FROM usuarios WHERE id = NEW.usuario_id FOR UPDATE;
+
+    IF (SELECT COUNT(*) FROM materias WHERE usuario_id = NEW.usuario_id) >= 20 THEN
+        RAISE EXCEPTION 'El usuario % ya tiene 20 materias (RF-02)', NEW.usuario_id
+            USING ERRCODE = 'check_violation';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER materias_tope_20
+    BEFORE INSERT ON materias
+    FOR EACH ROW EXECUTE FUNCTION validar_tope_materias();
+
+-- ---------- VISTA ----------
+-- ---------- Vista: progreso por materia (XP, pomodoros, minutos) ----------
+CREATE VIEW v_progreso_materia AS
+SELECT m.id  AS materia_id,
+       m.usuario_id,
+       m.nombre,
+       COALESCE(SUM(s.xp_otorgado), 0)                          AS xp_total,
+       COUNT(*) FILTER (WHERE s.estado = 'completada')          AS pomodoros_completados,
+       COUNT(*) FILTER (WHERE s.estado = 'cancelada')           AS pomodoros_cancelados,
+       COALESCE(SUM(EXTRACT(EPOCH FROM (s.fin - s.inicio)) / 60)
+                FILTER (WHERE s.estado = 'completada'), 0)::INT AS minutos_estudiados
+FROM materias m
+LEFT JOIN sesiones s ON s.materia_id = m.id
+GROUP BY m.id;
