@@ -16,6 +16,26 @@ CREATE TABLE usuarios (
 -- Correo único sin importar mayúsculas (Ana@UNA.ac.cr = ana@una.ac.cr)
 CREATE UNIQUE INDEX usuarios_correo_unico ON usuarios (LOWER(correo));
 
+-- ---------- MASCOTAS ----------
+
+-- Catálogo: especies que el usuario puede elegir al crear su cuenta
+CREATE TABLE especies_mascota (
+    id          SERIAL PRIMARY KEY,
+    codigo      VARCHAR(50)  NOT NULL UNIQUE,   -- nombre de la carpeta de imágenes en el frontend
+    nombre      VARCHAR(100) NOT NULL,
+    descripcion TEXT         NOT NULL
+);
+
+-- Una mascota por usuario (la llave primaria es usuario_id)
+-- La etapa de evolución y el estado NO se guardan: se calculan (XP total y sesión actual)
+CREATE TABLE mascotas (
+    usuario_id INT PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
+    especie_id INT NOT NULL REFERENCES especies_mascota(id),   -- no deja borrar una especie en uso
+    nombre     VARCHAR(50) NOT NULL CHECK (length(trim(nombre)) > 0),
+    creado_en  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX mascotas_especie_idx ON mascotas (especie_id);
+
 -- ---------- MATERIAS ----------
 
 CREATE TABLE materias (
