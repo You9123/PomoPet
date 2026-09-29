@@ -56,11 +56,9 @@ CREATE TABLE jefes_finales (
     materia_id   INT NOT NULL REFERENCES materias(id) ON DELETE CASCADE,
     nombre       VARCHAR(100) NOT NULL CHECK (length(trim(nombre)) > 0),
     hp_total     INT NOT NULL CHECK (hp_total > 0),          -- RF-12: HP en pomodoros
-    hp_actual    INT NOT NULL CHECK (hp_actual >= 0),
     fecha_limite DATE,
-    derrotado    BOOLEAN GENERATED ALWAYS AS (hp_actual = 0) STORED,  -- RF-12
     creado_en    TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CHECK (hp_actual <= hp_total),
+    -- hp_actual y derrotado se calculan en la vista v_estado_jefe
     UNIQUE (id, materia_id)   -- permite que sesiones valide jefe + materia juntos
 );
 CREATE INDEX jefes_finales_materia_idx ON jefes_finales (materia_id);
@@ -74,15 +72,12 @@ CREATE TABLE sesiones (
     inicio        TIMESTAMPTZ NOT NULL DEFAULT now(),    -- RF-09: lo fija el servidor
     fin           TIMESTAMPTZ,
     estado        VARCHAR(20) NOT NULL DEFAULT 'en_curso' CHECK (estado IN ('en_curso', 'completada', 'cancelada')),    -- RF-11
-    xp_otorgado   INT NOT NULL DEFAULT 0 CHECK (xp_otorgado >= 0),
     -- el jefe debe pertenecer a la MISMA materia de la sesión
-    FOREIGN KEY (jefe_id, materia_id) 
+    FOREIGN KEY (jefe_id, materia_id)
         REFERENCES jefes_finales(id, materia_id) ON DELETE SET NULL (jefe_id),
     -- en curso <=> sin fin
     CHECK ((estado = 'en_curso') = (fin IS NULL)),
-    CHECK (fin IS NULL OR fin >= inicio),
-    -- RF-11: solo una sesión completada puede dar XP
-    CHECK (estado = 'completada' OR xp_otorgado = 0)
+    CHECK (fin IS NULL OR fin >= inicio)
 );
 CREATE INDEX sesiones_materia_idx ON sesiones (materia_id);
 CREATE INDEX sesiones_jefe_idx ON sesiones (jefe_id);
@@ -139,18 +134,38 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER materias_tope_20
     BEFORE INSERT OR UPDATE OF usuario_id ON materias
     FOR EACH ROW EXECUTE FUNCTION validar_tope_materias();
+    
+-- ---------- VISTAS ----------
 
--- ---------- VISTA ----------
--- ---------- Vista: progreso por materia (XP, pomodoros, minutos) ----------
+-- Progreso por materia. El XP no se guarda: lo calcula el backend (100 x pomodoro, RF-03)
 CREATE VIEW v_progreso_materia AS
-SELECT m.id  AS materia_id,
+SELECT m.id AS materia_id,
        m.usuario_id,
        m.nombre,
-       COALESCE(SUM(s.xp_otorgado), 0)                          AS xp_total,
-       COUNT(*) FILTER (WHERE s.estado = 'completada')          AS pomodoros_completados,
-       COUNT(*) FILTER (WHERE s.estado = 'cancelada')           AS pomodoros_cancelados,
-       COALESCE(SUM(EXTRACT(EPOCH FROM (s.fin - s.inicio)) / 60)
+       COUNT(s.id) FILTER (WHERE s.estado = 'completada') AS pomodoros_completados,
+       COUNT(s.id) FILTER (WHERE s.estado = 'cancelada')  AS pomodoros_cancelados,
+       -- minutos de sesiones completadas, restando el tiempo en pausa
+       COALESCE(SUM(EXTRACT(EPOCH FROM (s.fin - s.inicio - COALESCE(p.pausado, interval '0'))) / 60)
                 FILTER (WHERE s.estado = 'completada'), 0)::INT AS minutos_estudiados
 FROM materias m
 LEFT JOIN sesiones s ON s.materia_id = m.id
+LEFT JOIN LATERAL (
+    SELECT SUM(pa.fin - pa.inicio) AS pausado
+    FROM pausas pa
+    WHERE pa.sesion_id = s.id
+) p ON true
 GROUP BY m.id;
+
+-- Estado del Jefe Final (RF-06, RF-12): cada pomodoro completado le quita 1 HP
+CREATE VIEW v_estado_jefe AS
+SELECT j.id AS jefe_id,
+       j.materia_id,
+       j.nombre,
+       j.hp_total,
+       j.fecha_limite,
+       COUNT(s.id)::INT                          AS pomodoros_recibidos,
+       GREATEST(j.hp_total - COUNT(s.id), 0)::INT AS hp_actual,
+       COUNT(s.id) >= j.hp_total                  AS derrotado
+FROM jefes_finales j
+LEFT JOIN sesiones s ON s.jefe_id = j.id AND s.estado = 'completada'
+GROUP BY j.id;
