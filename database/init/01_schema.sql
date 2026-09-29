@@ -8,7 +8,9 @@ CREATE TABLE usuarios (
     id            SERIAL PRIMARY KEY,
     correo        VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,          -- RNF-05: nunca texto plano
-    creado_en     TIMESTAMPTZ  NOT NULL DEFAULT now()
+    descanso_largo_min SMALLINT NOT NULL DEFALULT 15
+        CHECK (descanso_largo_min BETWEEN 15 AND 30),    -- RF-10
+    creado_en     TIMESTAMPTZ  NOT NULL DEFAULT now(),
     CONSTRAINT correo_formato CHECK (correo ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$')
 );
 -- Correo único sin importar mayúsculas (Ana@UNA.ac.cr = ana@una.ac.cr)
@@ -22,16 +24,17 @@ CREATE TABLE materias (
     nombre          VARCHAR(100) NOT NULL CHECK (length(trim(nombre)) > 0),
     color           CHAR(7) NOT NULL DEFAULT '#888888' CHECK (color ~ '^#[0-9A-Fa-f]{6}$'),
     horas_semanales SMALLINT CHECK (horas_semanales BETWEEN 0 AND 168),
-    creado_en       TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (usuario_id, nombre)
+    creado_en       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Nombre único por usuario sin importar mayúsculas ni espacios 
+CREATE UNIQUE INDEX materias_nombre_unico ON materias (usuario_id, LOWER(trim(nombre)));
 
 -- ---------- JEFES FINALES ----------
 
 CREATE TABLE jefes_finales (
     id           SERIAL PRIMARY KEY,
     materia_id   INT NOT NULL REFERENCES materias(id) ON DELETE CASCADE,
-    nombre       VARCHAR(100) NOT NULL,
+    nombre       VARCHAR(100) NOT NULL CHECK (length(trim(nombre)) > 0),
     hp_total     INT NOT NULL CHECK (hp_total > 0),          -- RF-12: HP en pomodoros
     hp_actual    INT NOT NULL CHECK (hp_actual >= 0),
     fecha_limite DATE,
@@ -90,7 +93,7 @@ BEGIN
     -- bloquea al usuario para que dos inserts simultáneos no pasen ambos
     PERFORM 1 FROM usuarios WHERE id = NEW.usuario_id FOR UPDATE;
 
-    IF (SELECT COUNT(*) FROM materias WHERE usuario_id = NEW.usuario_id) >= 20 THEN
+    IF (SELECT COUNT(*) FROM materias WHERE usuario_id = NEW.usuario_id AND id <> NEW.id) >= 20 THEN
         RAISE EXCEPTION 'El usuario % ya tiene 20 materias (RF-02)', NEW.usuario_id
             USING ERRCODE = 'check_violation';
     END IF;
@@ -100,7 +103,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER materias_tope_20
-    BEFORE INSERT ON materias
+    BEFORE INSERT OR UPDATE OF usuario_id ON materias
     FOR EACH ROW EXECUTE FUNCTION validar_tope_materias();
 
 -- ---------- VISTA ----------
