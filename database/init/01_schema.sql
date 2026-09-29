@@ -8,7 +8,7 @@ CREATE TABLE usuarios (
     id            SERIAL PRIMARY KEY,
     correo        VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,          -- RNF-05: nunca texto plano
-    descanso_largo_min SMALLINT NOT NULL DEFALULT 15
+    descanso_largo_min SMALLINT NOT NULL DEFAULT 15
         CHECK (descanso_largo_min BETWEEN 15 AND 30),    -- RF-10
     creado_en     TIMESTAMPTZ  NOT NULL DEFAULT now(),
     CONSTRAINT correo_formato CHECK (correo ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$')
