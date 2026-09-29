@@ -87,6 +87,20 @@ CREATE TABLE sesiones (
 CREATE INDEX sesiones_materia_idx ON sesiones (materia_id);
 CREATE INDEX sesiones_jefe_idx ON sesiones (jefe_id);
 
+-- ---------- PAUSAS ----------
+
+-- RF-01 / RF-09: el tiempo en pausa no cuenta como tiempo estudiado
+CREATE TABLE pausas (
+    id        SERIAL PRIMARY KEY,
+    sesion_id INT NOT NULL REFERENCES sesiones(id) ON DELETE CASCADE,
+    inicio    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    fin       TIMESTAMPTZ,                      -- NULL = la pausa sigue activa
+    CHECK (fin IS NULL OR fin >= inicio)
+);
+CREATE INDEX pausas_sesion_idx ON pausas (sesion_id);
+-- Una sesión solo puede tener una pausa abierta a la vez
+CREATE UNIQUE INDEX pausas_una_abierta ON pausas (sesion_id) WHERE fin IS NULL;
+
 -- ---------- LOGROS ----------
 
 -- Catálogo: la lista de logros que existen en el juego
