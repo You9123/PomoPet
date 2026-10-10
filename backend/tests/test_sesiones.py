@@ -131,6 +131,34 @@ def test_sin_token_da_401(client):
     assert client.post("/api/sesiones", json={"materia_id": 1}).status_code == 401
 
 
+# ---------- Sesión actual (para retomar el temporizador) ----------
+
+def test_sesion_actual_sin_sesion_devuelve_null(client, conn):
+    headers, _ = crear_usuario(client, conn)
+    r = client.get("/api/sesiones/actual", headers=headers)
+    assert r.status_code == 200
+    assert r.json() is None
+
+
+def test_sesion_actual_devuelve_la_sesion_en_curso_con_su_pausa(client, conn):
+    headers, materia = crear_usuario(client, conn)
+    sesion = iniciar(client, headers, materia).json()["id"]
+    accion(client, headers, sesion, "pausar")
+    r = client.get("/api/sesiones/actual", headers=headers)
+    assert r.status_code == 200
+    assert r.json()["id"] == sesion
+    assert r.json()["pausada"] is True
+
+
+def test_sesion_actual_no_devuelve_sesiones_terminadas_ni_ajenas(client, conn):
+    headers_ana, materia = crear_usuario(client, conn, "ana@una.ac.cr")
+    headers_beto, _ = crear_usuario(client, conn, "beto@una.ac.cr")
+    sesion = iniciar(client, headers_ana, materia).json()["id"]
+    assert client.get("/api/sesiones/actual", headers=headers_beto).json() is None
+    accion(client, headers_ana, sesion, "cancelar")
+    assert client.get("/api/sesiones/actual", headers=headers_ana).json() is None
+
+
 # ---------- Finalizar: el caso límite de 25 minutos ----------
 
 def test_finalizar_con_25_minutos_completa_y_da_100_xp(client, conn):

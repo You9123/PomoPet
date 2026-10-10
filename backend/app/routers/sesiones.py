@@ -125,6 +125,21 @@ def iniciar_sesion(datos: IniciarSesion, usuario_id: int = Depends(usuario_actua
     return a_respuesta(cargar_sesion(conn, nueva["id"], usuario_id))
 
 
+@router.get("/sesiones/actual", response_model=SesionOut | None)
+def sesion_actual(usuario_id: int = Depends(usuario_actual), conn=Depends(get_conn)):
+    """La sesión en curso del usuario, o null. Sirve para retomar el temporizador al recargar la página."""
+    fila = conn.execute(
+        """
+        SELECT s.id FROM sesiones s JOIN materias m ON m.id = s.materia_id
+        WHERE m.usuario_id = %s AND s.estado = 'en_curso'
+        """,
+        (usuario_id,),
+    ).fetchone()
+    if fila is None:
+        return None
+    return a_respuesta(cargar_sesion(conn, fila["id"], usuario_id))
+
+
 @router.post("/sesiones/{sesion_id}/pausar", response_model=SesionOut)
 def pausar(sesion_id: int, usuario_id: int = Depends(usuario_actual), conn=Depends(get_conn)):
     """RF-01: abre una pausa. El tiempo en pausa no cuenta para los 25 minutos."""

@@ -10,6 +10,7 @@ Todos los endpoints requieren `Authorization: Bearer <token>` (ver `autenticacio
 | Método | Ruta                            | Qué hace                                                           | Errores                                    |
 | ------ | ------------------------------- | ------------------------------------------------------------------ | ------------------------------------------ |
 | POST   | `/api/sesiones`                 | Inicia una sesión: `{"materia_id": 1, "jefe_id": null}` → `201`    | `404` materia o jefe; `409` ya hay una en curso o jefe derrotado |
+| GET    | `/api/sesiones/actual`          | La sesión en curso del usuario, o `null` (para retomar el temporizador al recargar) | —                                          |
 | POST   | `/api/sesiones/{id}/pausar`     | Abre una pausa (RF-01)                                             | `409` ya está en pausa o ya terminó        |
 | POST   | `/api/sesiones/{id}/reanudar`   | Cierra la pausa abierta                                            | `409` no está en pausa o ya terminó        |
 | POST   | `/api/sesiones/{id}/finalizar`  | Completa la sesión si hay 25 min efectivos o más (RF-03, RF-09)    | `409` faltan minutos (sigue en curso)      |
