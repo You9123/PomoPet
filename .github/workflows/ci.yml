@@ -9,6 +9,24 @@ on:
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
+    # PostgreSQL de prueba para las pruebas que usan la BD
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pomopet
+          POSTGRES_PASSWORD: pomopet_ci
+          POSTGRES_DB: pomopet
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pomopet"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://pomopet:pomopet_ci@localhost:5432/pomopet
+      JWT_SECRET: secreto-solo-para-el-ci-de-github-actions
     defaults:
       run:
         working-directory: backend
@@ -17,6 +35,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Cargar el esquema de la BD
+        run: for f in ../database/init/*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -f "$f"; done
       - run: pip install -r requirements.txt
       - run: pytest -v
 
