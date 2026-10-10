@@ -58,9 +58,9 @@ frontend/public/mascotas/<especie>/<variante>/<estado>.png
 | perro | clasico (café), ceniza, sombra, nieve, dorado, celeste |
 | dragon | clasico (verde), fuego, hielo, violeta, sombra, nieve |
 
-`public/mascotas/variantes.json` lista las variantes de cada especie con su nombre y un color de
-muestra, para armar un selector. El componente `MascotaSprite` recibe la `variante` como propiedad
-(por defecto `clasico`).
+La lista de colores de cada especie vive en la base de datos (`variantes_mascota`) y la API la
+entrega en `GET /api/especies`, que es lo que usa el selector del registro. El componente
+`MascotaSprite` recibe la `variante` como propiedad (por defecto `clasico`).
 
 ### Cómo se generan
 
@@ -69,7 +69,7 @@ Los PNG se generan por código, así que nunca se dibujan a mano 90 archivos:
 ```bash
 cd frontend
 npm run sprites:base        # dibuja el arte original (variante clasico)
-npm run sprites:variantes   # recolorea el clasico y escribe las demás variantes + variantes.json
+npm run sprites:variantes   # recolorea el clasico, escribe las demás variantes y database/init/04_variantes.sql
 ```
 
 - **Cambiar un dibujo, agregar un estado o una especie:** se edita `tools/sprites-base.mjs` y se
@@ -81,11 +81,18 @@ npm run sprites:variantes   # recolorea el clasico y escribe las demás variante
   `clasico`, incluso uno dibujado a mano.
 - El tamaño se ajusta a un **múltiplo entero** y se dibuja con `image-rendering: pixelated`.
 
-### Falta decidir: ¿dónde se guarda la variante elegida?
+### Elección del color
 
-Hoy cada usuario tiene solo la **especie**. Para que el usuario escoja un color hace falta guardarlo
-(por ejemplo `mascotas.variante`, validado contra `variantes.json`), recibirlo en el registro y
-devolverlo en `GET /api/me`. Eso toca la base de datos y la API, así que lo decide el equipo.
+- **Registro:** después de elegir la especie aparece "Elige su color" con una muestra por variante.
+  Al cambiar de especie se vuelve al `clasico`, y la mascota de la tarjeta se ve con el color elegido.
+- **API:** `POST /api/auth/registro` recibe `variante` (opcional, por defecto `clasico`). Si el color no
+  existe para esa especie responde `422` y no se crea el usuario. `GET /api/me` devuelve
+  `mascota.variante` y `mascota.variante_nombre`.
+- **Base de datos:** `mascotas.variante`, con llave foránea compuesta `(especie_id, variante)` hacia
+  `variantes_mascota`, así que un gato no puede tener un color de dragón.
+- **Agregar o quitar un color:** editar `tools/recolor.js`, correr `npm run sprites:variantes` y
+  recrear la base de datos (`docker compose down -v` y `up -d --build`).
+- Todavía **no se puede cambiar el color después de registrarse**; sería un `PATCH` a la mascota.
 
 ## Provisional
 

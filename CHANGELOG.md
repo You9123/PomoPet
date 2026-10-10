@@ -13,7 +13,8 @@
 - Pruebas del backend contra PostgreSQL: el CI levanta un servicio postgres:16 y carga el esquema antes de `pytest`.
 - Sesiones Pomodoro (#5): endpoints para iniciar, pausar, reanudar, finalizar y cancelar (`docs/sesiones.md`). El servidor valida 25 minutos efectivos (sin pausas) antes de dar XP y solo permite una sesión en curso por usuario.
 - Temporizador Pomodoro en Vue (#6): reloj basado en marcas de tiempo, pausa y reanudar, descansos corto y largo, mascota en pixel art animada por estados (gato, perro, dragón), registro e ingreso, y `GET /api/sesiones/actual` para retomar la sesión al recargar (`docs/temporizador.md`).
-- Variantes de color de las mascotas: 5 por especie además del `clasico` (75 sprites), generadas con `npm run sprites:variantes` y listadas en `public/mascotas/variantes.json`. El dibujo base también se genera por código (`npm run sprites:base`).
+- Variantes de color de las mascotas: 5 por especie además del `clasico` (75 sprites), generadas con `npm run sprites:variantes`. El dibujo base también se genera por código (`npm run sprites:base`).
+- Selector de color de la mascota en el registro: tabla `variantes_mascota` y `mascotas.variante` (con llave foránea compuesta a la especie), `variante` en `POST /api/auth/registro`, colores en `GET /api/especies` y `variante` en `GET /api/me`. 2 reglas nuevas en `pruebas_reglas.sql` (20 en total).
 
 ### Cambiado
 
@@ -21,7 +22,7 @@
 
 ### Notas
 
-- Después de actualizar `develop` hay que recrear la BD: `docker compose down -v` y `docker compose up --build`.
+- Después de actualizar `develop` hay que recrear la BD: `docker compose down -v` y `docker compose up --build` (el esquema ahora incluye `variantes_mascota`).
 - Agregar `JWT_SECRET` al `.env` de cada integrante (ver `.env.example`).
 
 ## [Sprint 1] - 2026-09-23

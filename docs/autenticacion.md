@@ -22,7 +22,7 @@ Se eligió JWT porque la API no necesita guardar sesiones en la BD y FastAPI lo 
 
 | Método | Ruta                 | Protegido | Respuesta                                  |
 | ------ | -------------------- | --------- | ------------------------------------------ |
-| GET    | `/api/especies`      | No        | Especies de mascota para elegir            |
+| GET    | `/api/especies`      | No        | Especies de mascota, cada una con sus colores (`variantes`) |
 | POST   | `/api/auth/registro` | No        | `201` + token                              |
 | POST   | `/api/auth/login`    | No        | `200` + token                              |
 | GET    | `/api/me`            | Sí        | Usuario, su mascota y `descanso_largo_min` |
@@ -34,6 +34,7 @@ Ejemplo de registro:
   "correo": "ana@una.ac.cr",
   "password": "Pomodoro25",
   "especie_id": 1,
+  "variante": "clasico",
   "nombre_mascota": "Michi"
 }
 ```
