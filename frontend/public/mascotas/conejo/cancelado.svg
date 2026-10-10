@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img">
+  <title>conejo - cancelado</title>
+  
+      <ellipse cx="74" cy="42" rx="17" ry="42" fill="#f4f1ee" stroke="#d9d2cc" stroke-width="2"/>
+      <ellipse cx="126" cy="42" rx="17" ry="42" fill="#f4f1ee" stroke="#d9d2cc" stroke-width="2"/>
+      <ellipse cx="74" cy="44" rx="8" ry="28" fill="#f6b7c4"/>
+      <ellipse cx="126" cy="44" rx="8" ry="28" fill="#f6b7c4"/>
+  <ellipse cx="100" cy="112" rx="64" ry="56" fill="#f4f1ee"/>
+  
+  <circle cx="74" cy="108" r="7" fill="#2b2233"/><circle cx="126" cy="108" r="7" fill="#2b2233"/>
+              <path d="M60 94 L86 86 M140 94 L114 86" stroke="#2b2233" stroke-width="4" stroke-linecap="round"/>
+              <path d="M74 120 Q70 134 74 138 Q80 134 74 120 Z" fill="#6aa9e0"/>
+  <ellipse cx="100" cy="122" rx="8" ry="6" fill="#e0707e"/>
+  <path d="M88 148 Q100 136 112 148" fill="none" stroke="#2b2233" stroke-width="4" stroke-linecap="round"/>
+  
+</svg>

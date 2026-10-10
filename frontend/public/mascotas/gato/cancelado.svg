@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img">
+  <title>gato - cancelado</title>
+  
+      <polygon points="48,78 56,24 98,56" fill="#f2a65a"/>
+      <polygon points="152,78 144,24 102,56" fill="#f2a65a"/>
+      <polygon points="58,66 62,40 82,56" fill="#f7c9a0"/>
+      <polygon points="142,66 138,40 118,56" fill="#f7c9a0"/>
+  <ellipse cx="100" cy="112" rx="64" ry="56" fill="#f2a65a"/>
+  
+  <circle cx="74" cy="108" r="7" fill="#2b2233"/><circle cx="126" cy="108" r="7" fill="#2b2233"/>
+              <path d="M60 94 L86 86 M140 94 L114 86" stroke="#2b2233" stroke-width="4" stroke-linecap="round"/>
+              <path d="M74 120 Q70 134 74 138 Q80 134 74 120 Z" fill="#6aa9e0"/>
+  
+      <path d="M52 126 L22 120 M52 134 L22 138 M148 126 L178 120 M148 134 L178 138"
+            stroke="#2b2233" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="100" cy="122" rx="8" ry="6" fill="#e0707e"/>
+  <path d="M88 148 Q100 136 112 148" fill="none" stroke="#2b2233" stroke-width="4" stroke-linecap="round"/>
+  
+</svg>
