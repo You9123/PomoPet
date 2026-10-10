@@ -10,7 +10,9 @@
     "lint": "run-s \"lint:*\"",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
-    "test": "node --test \"src/**/*.test.js\""
+    "test": "node --test \"src/**/*.test.js\" \"tools/**/*.test.js\"",
+    "sprites:base": "node tools/sprites-base.mjs",
+    "sprites:variantes": "node tools/variantes.mjs"
   },
   "dependencies": {
     "@fontsource/press-start-2p": "^5.3.0",
