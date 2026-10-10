@@ -26,13 +26,28 @@ CREATE TABLE especies_mascota (
     descripcion TEXT         NOT NULL
 );
 
+-- Catálogo: colores disponibles de cada especie. `codigo` es la carpeta de las imágenes:
+-- frontend/public/mascotas/<especie>/<codigo>/. Cada especie tiene siempre la variante 'clasico'.
+-- Se genera con `npm run sprites:variantes` (04_variantes.sql).
+CREATE TABLE variantes_mascota (
+    especie_id INT         NOT NULL REFERENCES especies_mascota(id),
+    codigo     VARCHAR(30) NOT NULL,
+    nombre     VARCHAR(50) NOT NULL,
+    muestra    CHAR(7)     NOT NULL CHECK (muestra ~ '^#[0-9A-Fa-f]{6}$'),  -- color del selector
+    orden      SMALLINT    NOT NULL,
+    PRIMARY KEY (especie_id, codigo)
+);
+
 -- Una mascota por usuario (la llave primaria es usuario_id)
 -- La etapa de evolución y el estado NO se guardan: se calculan (XP total y sesión actual)
 CREATE TABLE mascotas (
     usuario_id INT PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
     especie_id INT NOT NULL REFERENCES especies_mascota(id),   -- no deja borrar una especie en uso
+    variante   VARCHAR(30) NOT NULL DEFAULT 'clasico',
     nombre     VARCHAR(50) NOT NULL CHECK (length(trim(nombre)) > 0),
-    creado_en  TIMESTAMPTZ NOT NULL DEFAULT now()
+    creado_en  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- el color tiene que ser uno de los de SU especie
+    FOREIGN KEY (especie_id, variante) REFERENCES variantes_mascota (especie_id, codigo)
 );
 CREATE INDEX mascotas_especie_idx ON mascotas (especie_id);
 
