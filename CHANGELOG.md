@@ -12,6 +12,7 @@
 - Registro e inicio de sesión (#3): endpoints `/api/auth/registro`, `/api/auth/login`, `/api/especies` y `/api/me`; contraseñas con bcrypt y sesión con JWT (`docs/autenticacion.md`).
 - Pruebas del backend contra PostgreSQL: el CI levanta un servicio postgres:16 y carga el esquema antes de `pytest`.
 - Sesiones Pomodoro (#5): endpoints para iniciar, pausar, reanudar, finalizar y cancelar (`docs/sesiones.md`). El servidor valida 25 minutos efectivos (sin pausas) antes de dar XP y solo permite una sesión en curso por usuario.
+- Temporizador Pomodoro en Vue (#6): reloj basado en marcas de tiempo, pausa y reanudar, descansos corto y largo, mascota por estados (gato, perro, conejo), registro e ingreso, y `GET /api/sesiones/actual` para retomar la sesión al recargar (`docs/temporizador.md`).
 
 ### Cambiado
 
