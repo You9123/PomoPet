@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 
 import { ApiError } from '../api/cliente.js'
 import { useAuthStore } from '../stores/auth.js'
+import MascotaSprite from './MascotaSprite.vue'
 
 const auth = useAuthStore()
 
@@ -21,7 +22,7 @@ onMounted(async () => {
     await auth.cargarEspecies()
     especieId.value = auth.especies[0]?.id ?? null
   } catch {
-    // se reintenta al abrir la pestaña de registro
+    error.value = 'No se pudo cargar la lista de mascotas. ¿Está encendido el backend?'
   }
 })
 
@@ -48,16 +49,32 @@ async function enviar() {
 </script>
 
 <template>
-  <section class="acceso" aria-labelledby="titulo-acceso">
-    <h2 id="titulo-acceso">{{ esRegistro ? 'Crea tu cuenta' : 'Ingresa a PomoPet' }}</h2>
+  <section class="acceso tarjeta marco" aria-labelledby="titulo-acceso">
+    <h2 id="titulo-acceso" class="acceso__titulo">
+      {{ esRegistro ? 'Elige a tu compañero' : 'Bienvenido de vuelta' }}
+    </h2>
 
-    <form @submit.prevent="enviar">
-      <label>
+    <form class="acceso__form" @submit.prevent="enviar">
+      <fieldset v-if="esRegistro" class="especies">
+        <legend class="sr-only">Elige tu mascota</legend>
+        <label v-for="e in auth.especies" :key="e.id" class="especie" :class="{ 'especie--activa': especieId === e.id }">
+          <input v-model="especieId" type="radio" name="especie" :value="e.id" />
+          <MascotaSprite :especie="e.codigo" estado="inactivo" :nombre="e.nombre" :tamano="64" :animada="especieId === e.id" />
+          <span class="especie__nombre">{{ e.nombre }}</span>
+        </label>
+      </fieldset>
+
+      <label v-if="esRegistro" class="campo">
+        Nombre de tu mascota
+        <input v-model="nombreMascota" type="text" maxlength="50" required />
+      </label>
+
+      <label class="campo">
         Correo
         <input v-model="correo" type="email" autocomplete="email" required />
       </label>
 
-      <label>
+      <label class="campo">
         Contraseña
         <input
           v-model="password"
@@ -68,27 +85,9 @@ async function enviar() {
         <small v-if="esRegistro">Mínimo 8 caracteres, con al menos una letra y un número.</small>
       </label>
 
-      <template v-if="esRegistro">
-        <fieldset>
-          <legend>Elige tu mascota</legend>
-          <div class="especies">
-            <label v-for="e in auth.especies" :key="e.id" class="especie">
-              <input v-model="especieId" type="radio" name="especie" :value="e.id" />
-              <img :src="`/mascotas/${e.codigo}/inactivo.svg`" :alt="e.nombre" width="72" height="72" />
-              <span>{{ e.nombre }}</span>
-            </label>
-          </div>
-        </fieldset>
+      <p v-if="error" class="aviso-error" role="alert">{{ error }}</p>
 
-        <label>
-          Nombre de tu mascota
-          <input v-model="nombreMascota" type="text" maxlength="50" required />
-        </label>
-      </template>
-
-      <p v-if="error" class="error" role="alert">{{ error }}</p>
-
-      <button type="submit" :disabled="enviando">
+      <button type="submit" class="btn btn--tomate" :disabled="enviando">
         {{ esRegistro ? 'Crear cuenta' : 'Ingresar' }}
       </button>
     </form>
@@ -102,121 +101,85 @@ async function enviar() {
 <style scoped>
 .acceso {
   display: grid;
-  gap: 1rem;
-  padding: 2rem 1.25rem;
-  border-radius: 1.5rem;
-  background: var(--color-background-soft);
-  border: 1px solid var(--color-border);
+  gap: 1.25rem;
+  justify-items: stretch;
 }
 
-h2 {
+.acceso__titulo {
   margin: 0;
   text-align: center;
-  color: var(--color-heading);
+  font-size: 0.8rem;
+  color: var(--oro);
+  text-shadow: 2px 2px 0 var(--tinta);
 }
 
-form {
+.acceso__form {
   display: grid;
-  gap: 1rem;
+  gap: 1.1rem;
 }
 
-label {
-  display: grid;
-  gap: 0.35rem;
-  font-weight: 600;
-}
-
-input[type='email'],
-input[type='password'],
-input[type='text'] {
-  font: inherit;
-  padding: 0.6rem 0.75rem;
-  border-radius: 0.6rem;
-  border: 1px solid var(--color-border-hover);
-  background: var(--color-background);
-  color: var(--color-text);
-}
-
-small {
-  font-weight: 400;
-  color: var(--color-text-suave);
-}
-
-fieldset {
-  border: 0;
-  padding: 0;
-  margin: 0;
-}
-
-legend {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
+.acceso > .enlace {
+  justify-self: center;
 }
 
 .especies {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
+  gap: 0.6rem;
+  border: 0;
+  padding: 0;
+  margin: 0;
 }
 
 .especie {
   position: relative;
+  display: grid;
   justify-items: center;
-  padding: 0.5rem;
-  border: 2px solid var(--color-border-hover);
-  border-radius: 0.9rem;
+  gap: 0.4rem;
+  padding: 0.7rem 0.25rem 0.55rem;
   cursor: pointer;
-  font-weight: 500;
+  background: var(--tinta);
+  box-shadow:
+    0 -3px 0 0 var(--superficie-alta),
+    0 3px 0 0 var(--superficie-alta),
+    -3px 0 0 0 var(--superficie-alta),
+    3px 0 0 0 var(--superficie-alta);
+  margin: 3px;
+}
+
+.especie--activa {
+  background: var(--superficie-alta);
+  box-shadow:
+    0 -3px 0 0 var(--oro),
+    0 3px 0 0 var(--oro),
+    -3px 0 0 0 var(--oro),
+    3px 0 0 0 var(--oro);
 }
 
 .especie input {
   position: absolute;
   opacity: 0;
-}
-
-.especie:has(input:checked) {
-  border-color: var(--color-tomate);
-  background: var(--color-background);
-}
-
-.especie:has(input:focus-visible) {
-  outline: 3px solid var(--color-foco);
-  outline-offset: 2px;
-}
-
-button {
-  font: inherit;
-  font-weight: 600;
-  min-height: 2.75rem;
-  padding: 0.6rem 1.4rem;
-  border-radius: 999px;
-  border: 2px solid var(--color-tomate);
-  background: var(--color-tomate);
-  color: #fff;
+  inset: 0;
   cursor: pointer;
 }
 
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.especie:has(input:focus-visible) {
+  outline: 3px solid var(--foco);
+  outline-offset: 5px;
 }
 
-button.enlace {
-  background: none;
-  border: 0;
-  color: var(--color-tomate);
-  text-decoration: underline;
+.especie__nombre {
+  font-family: var(--fuente-pixel);
+  font-size: 0.6rem;
+  color: var(--texto);
 }
 
-button:focus-visible,
-input:focus-visible {
-  outline: 3px solid var(--color-foco);
-  outline-offset: 2px;
-}
-
-.error {
-  margin: 0;
-  color: var(--color-error);
-  font-weight: 600;
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 </style>

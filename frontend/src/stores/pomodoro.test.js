@@ -113,6 +113,19 @@ test('retomar una sesión usa los segundos efectivos del servidor', async () => 
   assert.equal(pomodoro.restanteMs, 15 * MIN)
 })
 
+test('la barra de progreso avanza con el tiempo y se congela en pausa', async () => {
+  await iniciarPomodoro()
+  assert.equal(pomodoro.progreso, 0)
+  t += 5 * MIN
+  pomodoro.tick()
+  assert.equal(pomodoro.progreso, 0.2)
+  responder('POST /api/sesiones/7/pausar', ok(sesion({ pausada: true, segundos_efectivos: 5 * 60 })))
+  await pomodoro.pausar()
+  t += 60 * MIN
+  pomodoro.tick()
+  assert.equal(pomodoro.progreso, 0.2)
+})
+
 // ---------- Pausas (RF-01) ----------
 
 test('pausar congela el tiempo y reanudar lo continúa', async () => {

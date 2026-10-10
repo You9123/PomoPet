@@ -61,6 +61,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   const restantePausadoMs = ref(0) // pausado: tiempo congelado
   const finCelebracionMs = ref(0) // exito: cuándo empieza el descanso
   const finDescansoMs = ref(0) // descanso: cuándo termina
+  const duracionDescansoMs = ref(0) // descanso: cuánto dura en total (para la barra)
   const noReintentarAntesDe = ref(0)
 
   let intervalo = null
@@ -78,6 +79,23 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
         return 0
       default:
         return POMODORO_SEG * 1000
+    }
+  })
+
+  /** 0 a 1: cuánto del pomodoro o del descanso ya pasó (barra de progreso). */
+  const progreso = computed(() => {
+    switch (fase.value) {
+      case 'estudiando':
+      case 'pausado':
+        return (POMODORO_SEG * 1000 - restanteMs.value) / (POMODORO_SEG * 1000)
+      case 'descanso':
+        return duracionDescansoMs.value
+          ? (duracionDescansoMs.value - restanteMs.value) / duracionDescansoMs.value
+          : 0
+      case 'exito':
+        return 1
+      default:
+        return 0
     }
   })
 
@@ -238,6 +256,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
       guardarCompletados(0)
     }
     descansoTipo.value = tipo
+    duracionDescansoMs.value = duracionMs
     finDescansoMs.value = reloj.ahora() + duracionMs
     fase.value = 'descanso'
   }
@@ -270,6 +289,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     error,
     ocupado,
     restanteMs,
+    progreso,
     puedeIniciar,
     tick,
     arrancarReloj,

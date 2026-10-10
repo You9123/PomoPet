@@ -1,37 +1,213 @@
-@import './base.css';
+/* PomoPet: estilo "pantalla de videojuego" en pixel art.
+   Paleta, fondo y piezas reutilizables (tarjeta, botón, campo). */
 
 :root {
-  --color-tomate: #d6402b; /* contraste AA con texto blanco */
-  --color-descanso: #1f8a5b;
-  --color-exito: #b07d00;
-  --color-apagado: #6b6f7a;
-  --color-error: #c0322b;
-  --color-foco: #2f6fdf;
-  --color-text-suave: var(--vt-c-text-light-2);
+  color-scheme: dark;
+
+  /* tinta y superficies */
+  --tinta: #150b2e;
+  --noche: #1d1040;
+  --superficie: #2b1a5c;
+  --superficie-alta: #3a2578;
+  --borde: #7c5cff;
+  --texto: #f6efff;
+  --texto-suave: #c9b8f5;
+
+  /* colores de juego */
+  --tomate: #ff5a3c;
+  --tomate-oscuro: #b8321c;
+  --oro: #ffd23f;
+  --oro-oscuro: #c99a00;
+  --menta: #3ee6b0;
+  --menta-oscura: #139a74;
+  --cielo: #4cc9f0;
+  --rosa: #ff7ac6;
+  --error: #ff8a80;
+  --foco: #ffffff;
+
+  --fuente-pixel: 'Press Start 2P', ui-monospace, 'Courier New', monospace;
+  --fuente-texto: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-tomate: #e5533d;
-    --color-descanso: #3fb985;
-    --color-exito: #e0b030;
-    --color-apagado: #9a9eaa;
-    --color-error: #ff8a80;
-    --color-foco: #7fb0ff;
-    --color-text-suave: var(--vt-c-text-dark-2);
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
 }
 
 body {
   min-height: 100vh;
-  color: var(--color-text);
-  background: var(--color-background);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--texto);
+  font-family: var(--fuente-texto);
   line-height: 1.5;
+  background-color: var(--noche);
+  /* cielo nocturno + estrellas de 3 px (cuadradas, como en un juego retro) */
+  background-image:
+    linear-gradient(#fff, #fff), linear-gradient(#fff, #fff), linear-gradient(var(--oro), var(--oro)),
+    linear-gradient(#fff, #fff), linear-gradient(var(--cielo), var(--cielo)), linear-gradient(#fff, #fff),
+    linear-gradient(var(--rosa), var(--rosa)), linear-gradient(#fff, #fff),
+    linear-gradient(180deg, #1d1040 0%, #3a1d7a 55%, #6a2c91 100%);
+  background-repeat: no-repeat;
+  background-size: 3px 3px, 3px 3px, 4px 4px, 3px 3px, 4px 4px, 3px 3px, 3px 3px, 3px 3px, 100% 100%;
+  background-position: 8% 12%, 22% 38%, 35% 8%, 64% 22%, 78% 10%, 91% 40%, 12% 64%, 88% 72%, 0 0;
+  background-attachment: fixed;
 }
 
 #app {
-  max-width: 28rem;
+  max-width: 30rem;
   margin: 0 auto;
   padding: 1.25rem 1rem 3rem;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--fuente-pixel);
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+/* ---------- Piezas reutilizables ---------- */
+
+/* Marco con esquinas "mordidas": cuatro sombras duras en lugar de border-radius */
+.marco {
+  --grosor: 4px;
+  box-shadow:
+    0 calc(var(--grosor) * -1) 0 0 var(--marco-color, var(--borde)),
+    0 var(--grosor) 0 0 var(--marco-color, var(--borde)),
+    calc(var(--grosor) * -1) 0 0 0 var(--marco-color, var(--borde)),
+    var(--grosor) 0 0 0 var(--marco-color, var(--borde)),
+    0 calc(var(--grosor) * 3) 0 0 rgb(0 0 0 / 0.35);
+}
+
+.tarjeta {
+  --marco-color: var(--borde);
+  background: var(--superficie);
+  margin: 4px;
+  padding: 1.25rem 1rem 1.5rem;
+}
+
+.btn {
+  --color: var(--oro);
+  --color-oscuro: var(--oro-oscuro);
+  --texto-btn: var(--tinta);
+  font-family: var(--fuente-pixel);
+  font-size: 0.75rem;
+  line-height: 1.2;
+  min-height: 3rem;
+  padding: 0.85rem 1.1rem;
+  margin: 4px;
+  border: 0;
+  cursor: pointer;
+  color: var(--texto-btn);
+  background: var(--color);
+  box-shadow:
+    0 -4px 0 0 var(--tinta),
+    0 4px 0 0 var(--tinta),
+    -4px 0 0 0 var(--tinta),
+    4px 0 0 0 var(--tinta),
+    inset 0 -4px 0 0 var(--color-oscuro),
+    inset 0 4px 0 0 rgb(255 255 255 / 0.35);
+  transition: transform 0.05s;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(3px);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn--tomate {
+  --color: var(--tomate);
+  --color-oscuro: var(--tomate-oscuro);
+  --texto-btn: #fff;
+}
+
+.btn--menta {
+  --color: var(--menta);
+  --color-oscuro: var(--menta-oscura);
+}
+
+.btn--apagado {
+  --color: var(--superficie-alta);
+  --color-oscuro: var(--noche);
+  --texto-btn: var(--texto);
+}
+
+.btn:focus-visible,
+.campo input:focus-visible,
+.enlace:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 4px;
+}
+
+.campo {
+  display: grid;
+  gap: 0.5rem;
+  font-family: var(--fuente-pixel);
+  font-size: 0.7rem;
+  color: var(--texto-suave);
+}
+
+.campo input {
+  font-family: var(--fuente-texto);
+  font-size: 1rem;
+  padding: 0.7rem 0.8rem;
+  border: 0;
+  color: var(--texto);
+  background: var(--tinta);
+  box-shadow:
+    0 -3px 0 0 var(--borde),
+    0 3px 0 0 var(--borde),
+    -3px 0 0 0 var(--borde),
+    3px 0 0 0 var(--borde);
+  margin: 3px;
+}
+
+.campo small {
+  font-family: var(--fuente-texto);
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.enlace {
+  background: none;
+  border: 0;
+  padding: 0.25rem;
+  font-family: var(--fuente-pixel);
+  font-size: 0.65rem;
+  color: var(--cielo);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.aviso-error {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  font-weight: 600;
+  color: var(--error);
+  background: rgb(255 90 60 / 0.12);
+  border-left: 4px solid var(--error);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

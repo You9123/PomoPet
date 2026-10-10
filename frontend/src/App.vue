@@ -27,8 +27,10 @@ function salir() {
 
 <template>
   <header class="barra">
-    <h1>PomoPet <span aria-hidden="true">🍅</span></h1>
-    <button v-if="auth.autenticado" class="salir" @click="salir">Salir</button>
+    <h1 class="logo" aria-label="PomoPet">
+      <span class="logo__pomo">Pomo</span><span class="logo__pet">Pet</span>
+    </h1>
+    <button v-if="auth.autenticado" class="btn btn--apagado salir" @click="salir">Salir</button>
   </header>
 
   <RouterView />
@@ -39,27 +41,31 @@ function salir() {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1.5rem;
+  padding: 0 4px;
 }
 
-h1 {
+.logo {
   margin: 0;
-  font-size: 1.5rem;
-  color: var(--color-heading);
+  font-size: clamp(1.1rem, 6vw, 1.6rem);
+  letter-spacing: 0.04em;
+  text-shadow:
+    3px 3px 0 var(--tinta),
+    0 0 18px rgb(124 92 255 / 0.6);
+}
+
+.logo__pomo {
+  color: var(--tomate);
+}
+
+.logo__pet {
+  color: var(--menta);
 }
 
 .salir {
-  font: inherit;
-  padding: 0.4rem 1rem;
-  border-radius: 999px;
-  border: 1px solid var(--color-border-hover);
-  background: transparent;
-  color: var(--color-text);
-  cursor: pointer;
-}
-
-.salir:focus-visible {
-  outline: 3px solid var(--color-foco);
-  outline-offset: 2px;
+  font-size: 0.6rem;
+  min-height: 2.25rem;
+  padding: 0.5rem 0.8rem;
 }
 </style>
