@@ -33,8 +33,32 @@ inactivo → estudiando ⇄ pausado → exito → descanso → inactivo
 - **Descansos (RF-10):** corto de 5 min; tras 4 pomodoros seguidos, largo con `descanso_largo_min`
   del usuario (15 a 30). Cancelar rompe la racha. Son locales: no se guardan en la API.
 - **Recargar la página:** `GET /api/sesiones/actual` retoma la sesión en curso, con su pausa.
-- **Imágenes:** `public/mascotas/<codigo-de-la-especie>/<estado>.svg` (gato, perro, conejo).
+- **Mascotas (pixel art):** una tira horizontal PNG por estado, de cuadros cuadrados, en
+  `public/mascotas/<codigo-de-la-especie>/<estado>.png` (gato, perro, dragon). Ver la sección siguiente.
   Para agregar una especie, crear su carpeta con los 5 archivos.
+
+## Cómo agregar o cambiar los sprites de una mascota
+
+Cada especie tiene una carpeta con el `codigo` de la tabla `especies_mascota` y **5 archivos PNG**,
+uno por estado: `inactivo`, `estudiando`, `exito`, `cancelado` y `descanso`.
+(`pausado` reutiliza `estudiando`, congelado.)
+
+```
+frontend/public/mascotas/dragon/inactivo.png     128 x 32  (4 cuadros de 32 x 32)
+frontend/public/mascotas/dragon/estudiando.png
+...
+```
+
+- **Tira horizontal**, con fondo transparente y los cuadros en orden, uno al lado del otro.
+- **Cuadros cuadrados**: la cantidad de cuadros se calcula como `ancho / alto`, así que sirve
+  cualquier tamaño (32 x 32, 64 x 64...) y cualquier número de cuadros (2, 4, 6...).
+- El tamaño se ajusta a un **múltiplo entero** (nunca fraccionario) y se dibuja con
+  `image-rendering: pixelated`, para que el pixel art se vea nítido.
+- Aseprite: *File > Export Sprite Sheet*, orientación *Horizontal Strip*; el JSON que genera no hace falta.
+- Una especie nueva necesita además su fila en `database/init/03_especies.sql`.
+
+Los sprites que hay ahora son **provisionales** (generados por código) y se reemplazan con solo
+sobrescribir los archivos.
 
 ## Provisional
 
