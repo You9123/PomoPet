@@ -33,6 +33,7 @@ class Credenciales(BaseModel):
 
 class Registro(Credenciales):
     especie_id: int = Field(examples=[1])
+    variante: str = Field(default="clasico", max_length=30, examples=["clasico"])  # color de la mascota
     nombre_mascota: str = Field(min_length=1, max_length=50, examples=["Michi"])
 
     @field_validator("password")
@@ -65,23 +66,46 @@ class Token(BaseModel):
 
 @router.get("/especies")
 def listar_especies(conn=Depends(get_conn)):
-    """Especies de mascota que se pueden elegir al registrarse."""
+    """Especies de mascota que se pueden elegir al registrarse, cada una con sus colores."""
     return conn.execute(
-        "SELECT id, codigo, nombre, descripcion FROM especies_mascota ORDER BY id"
+        """
+        SELECT e.id, e.codigo, e.nombre, e.descripcion,
+               COALESCE(
+                   json_agg(json_build_object('codigo', v.codigo, 'nombre', v.nombre, 'muestra', v.muestra)
+                            ORDER BY v.orden) FILTER (WHERE v.codigo IS NOT NULL),
+                   '[]'::json
+               ) AS variantes
+        FROM especies_mascota e
+        LEFT JOIN variantes_mascota v ON v.especie_id = e.id
+        GROUP BY e.id
+        ORDER BY e.id
+        """
     ).fetchall()
 
 
 @router.post("/auth/registro", response_model=Token, status_code=status.HTTP_201_CREATED)
 def registrar(datos: Registro, conn=Depends(get_conn)):
     """Crea el usuario y su mascota en la misma transacción (si algo falla, no se guarda nada)."""
+    # Se validan antes de insertar para poder dar un mensaje claro de cada caso
+    if conn.execute("SELECT 1 FROM especies_mascota WHERE id = %s", (datos.especie_id,)).fetchone() is None:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "La especie elegida no existe")
+    existe_color = conn.execute(
+        "SELECT 1 FROM variantes_mascota WHERE especie_id = %s AND codigo = %s",
+        (datos.especie_id, datos.variante),
+    ).fetchone()
+    if existe_color is None:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT, "Ese color no existe para la especie elegida"
+        )
+
     try:
         usuario = conn.execute(
             "INSERT INTO usuarios (correo, password_hash) VALUES (%s, %s) RETURNING id",
             (datos.correo, hashear_password(datos.password)),
         ).fetchone()
         conn.execute(
-            "INSERT INTO mascotas (usuario_id, especie_id, nombre) VALUES (%s, %s, %s)",
-            (usuario["id"], datos.especie_id, datos.nombre_mascota),
+            "INSERT INTO mascotas (usuario_id, especie_id, variante, nombre) VALUES (%s, %s, %s, %s)",
+            (usuario["id"], datos.especie_id, datos.variante, datos.nombre_mascota),
         )
     except errors.UniqueViolation:
         raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe una cuenta con ese correo")
@@ -109,10 +133,12 @@ def mi_perfil(usuario_id: int = Depends(usuario_actual), conn=Depends(get_conn))
     fila = conn.execute(
         """
         SELECT u.id, u.correo, u.descanso_largo_min,
-               m.nombre AS mascota_nombre, e.codigo AS especie_codigo, e.nombre AS especie_nombre
+               m.nombre AS mascota_nombre, e.codigo AS especie_codigo, e.nombre AS especie_nombre,
+               v.codigo AS variante_codigo, v.nombre AS variante_nombre
         FROM usuarios u
-        JOIN mascotas m         ON m.usuario_id = u.id
-        JOIN especies_mascota e ON e.id = m.especie_id
+        JOIN mascotas m           ON m.usuario_id = u.id
+        JOIN especies_mascota e   ON e.id = m.especie_id
+        JOIN variantes_mascota v  ON v.especie_id = m.especie_id AND v.codigo = m.variante
         WHERE u.id = %s
         """,
         (usuario_id,),
@@ -127,5 +153,7 @@ def mi_perfil(usuario_id: int = Depends(usuario_actual), conn=Depends(get_conn))
             "nombre": fila["mascota_nombre"],
             "especie": fila["especie_codigo"],
             "especie_nombre": fila["especie_nombre"],
+            "variante": fila["variante_codigo"],
+            "variante_nombre": fila["variante_nombre"],
         },
     }
