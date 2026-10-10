@@ -1,5 +1,9 @@
 import os
 
+# Si se corre pytest fuera de Docker y sin .env, usar un secreto de prueba
+# (tiene que ir ANTES de importar app, porque config.py lo valida al importarse)
+os.environ.setdefault("JWT_SECRET", "secreto-de-prueba-solo-para-pytest-local")
+
 import psycopg
 import pytest
 from fastapi.testclient import TestClient
