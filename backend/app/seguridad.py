@@ -20,7 +20,10 @@ def hashear_password(password: str) -> str:
 
 
 def verificar_password(password: str, password_hash: str) -> bool:
-    return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
+    datos = password.encode("utf-8")
+    if len(datos) > 72:  # límite de bcrypt: nunca puede coincidir (y bcrypt lanzaría error)
+        return False
+    return bcrypt.checkpw(datos, password_hash.encode("utf-8"))
 
 
 # ---------- Token JWT ----------
@@ -41,7 +44,10 @@ def usuario_actual(credenciales: HTTPAuthorizationCredentials | None = Depends(b
     if credenciales is None:
         raise no_autorizado
     try:
-        datos = jwt.decode(credenciales.credentials, JWT_SECRET, algorithms=[ALGORITMO])
+        datos = jwt.decode(
+            credenciales.credentials, JWT_SECRET, algorithms=[ALGORITMO],
+            options={"require": ["exp", "sub"]},  # rechaza tokens sin vencimiento
+        )
         return int(datos["sub"])
     except (jwt.PyJWTError, KeyError, ValueError):
         raise no_autorizado
