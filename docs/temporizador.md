@@ -33,32 +33,59 @@ inactivo → estudiando ⇄ pausado → exito → descanso → inactivo
 - **Descansos (RF-10):** corto de 5 min; tras 4 pomodoros seguidos, largo con `descanso_largo_min`
   del usuario (15 a 30). Cancelar rompe la racha. Son locales: no se guardan en la API.
 - **Recargar la página:** `GET /api/sesiones/actual` retoma la sesión en curso, con su pausa.
-- **Mascotas (pixel art):** una tira horizontal PNG por estado, de cuadros cuadrados, en
-  `public/mascotas/<codigo-de-la-especie>/<estado>.png` (gato, perro, dragon). Ver la sección siguiente.
+- **Mascotas (pixel art):** una tira horizontal PNG por estado y variante de color en
+  `public/mascotas/<especie>/<variante>/<estado>.png` (gato, perro, dragon). Ver más abajo.
   Para agregar una especie, crear su carpeta con los 5 archivos.
 
-## Cómo agregar o cambiar los sprites de una mascota
+## Mascotas: sprites y variantes de color
 
-Cada especie tiene una carpeta con el `codigo` de la tabla `especies_mascota` y **5 archivos PNG**,
-uno por estado: `inactivo`, `estudiando`, `exito`, `cancelado` y `descanso`.
-(`pausado` reutiliza `estudiando`, congelado.)
+Cada mascota es pixel art animado: una **tira horizontal PNG por estado**, de cuadros cuadrados
+(32 x 32, 4 cuadros), en:
 
 ```
-frontend/public/mascotas/dragon/inactivo.png     128 x 32  (4 cuadros de 32 x 32)
-frontend/public/mascotas/dragon/estudiando.png
-...
+frontend/public/mascotas/<especie>/<variante>/<estado>.png
+                         dragon    clasico     estudiando.png
 ```
 
-- **Tira horizontal**, con fondo transparente y los cuadros en orden, uno al lado del otro.
-- **Cuadros cuadrados**: la cantidad de cuadros se calcula como `ancho / alto`, así que sirve
-  cualquier tamaño (32 x 32, 64 x 64...) y cualquier número de cuadros (2, 4, 6...).
-- El tamaño se ajusta a un **múltiplo entero** (nunca fraccionario) y se dibuja con
-  `image-rendering: pixelated`, para que el pixel art se vea nítido.
-- Aseprite: *File > Export Sprite Sheet*, orientación *Horizontal Strip*; el JSON que genera no hace falta.
-- Una especie nueva necesita además su fila en `database/init/03_especies.sql`.
+- **Especies:** `gato`, `perro`, `dragon` (el `codigo` de `especies_mascota`).
+- **Estados (5 archivos):** `inactivo`, `estudiando`, `exito`, `cancelado`, `descanso`.
+  `pausado` reutiliza `estudiando`, congelado.
+- **Variantes:** `clasico` es el arte original; las demás son recoloreos automáticos.
 
-Los sprites que hay ahora son **provisionales** (generados por código) y se reemplazan con solo
-sobrescribir los archivos.
+| Especie | Variantes |
+| --- | --- |
+| gato | clasico (naranja), ceniza, sombra, nieve, rosa, celeste |
+| perro | clasico (café), ceniza, sombra, nieve, dorado, celeste |
+| dragon | clasico (verde), fuego, hielo, violeta, sombra, nieve |
+
+`public/mascotas/variantes.json` lista las variantes de cada especie con su nombre y un color de
+muestra, para armar un selector. El componente `MascotaSprite` recibe la `variante` como propiedad
+(por defecto `clasico`).
+
+### Cómo se generan
+
+Los PNG se generan por código, así que nunca se dibujan a mano 90 archivos:
+
+```bash
+cd frontend
+npm run sprites:base        # dibuja el arte original (variante clasico)
+npm run sprites:variantes   # recolorea el clasico y escribe las demás variantes + variantes.json
+```
+
+- **Cambiar un dibujo, agregar un estado o una especie:** se edita `tools/sprites-base.mjs` y se
+  vuelven a correr los dos comandos.
+- **Agregar o quitar una variante:** `tools/recolor.js` (`VARIANTES` define cada color y
+  `POR_ESPECIE` cuáles tiene cada especie).
+- El recoloreado solo toca el color principal de la especie; contorno, ojos, accesorios y efectos
+  (cuernos del dragón, estrellas, libro, nube, zzz) se conservan. Funciona con cualquier sprite
+  `clasico`, incluso uno dibujado a mano.
+- El tamaño se ajusta a un **múltiplo entero** y se dibuja con `image-rendering: pixelated`.
+
+### Falta decidir: ¿dónde se guarda la variante elegida?
+
+Hoy cada usuario tiene solo la **especie**. Para que el usuario escoja un color hace falta guardarlo
+(por ejemplo `mascotas.variante`, validado contra `variantes.json`), recibirlo en el registro y
+devolverlo en `GET /api/me`. Eso toca la base de datos y la API, así que lo decide el equipo.
 
 ## Provisional
 
@@ -69,7 +96,7 @@ Cuando exista, reemplazar ese campo en `components/TemporizadorPomodoro.vue` por
 
 ```bash
 cd frontend
-npm test        # node --test: lógica de tiempo y estados del store, sin navegador
+npm test        # node --test: lógica de tiempo, estados del store y recoloreado de sprites
 ```
 
 Las pruebas del store simulan el paso del tiempo con `reloj.ahora` y una API falsa.
