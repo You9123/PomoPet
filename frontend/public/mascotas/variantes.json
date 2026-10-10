@@ -1,0 +1,100 @@
+{
+  "especies": {
+    "gato": [
+      {
+        "codigo": "clasico",
+        "nombre": "Clásico",
+        "muestra": "#ff9a3c"
+      },
+      {
+        "codigo": "ceniza",
+        "nombre": "Ceniza",
+        "muestra": "#a79d94"
+      },
+      {
+        "codigo": "sombra",
+        "nombre": "Sombra",
+        "muestra": "#5b4e43"
+      },
+      {
+        "codigo": "nieve",
+        "nombre": "Nieve",
+        "muestra": "#dcd3ca"
+      },
+      {
+        "codigo": "rosa",
+        "nombre": "Rosa",
+        "muestra": "#fb559d"
+      },
+      {
+        "codigo": "celeste",
+        "nombre": "Celeste",
+        "muestra": "#46bef5"
+      }
+    ],
+    "perro": [
+      {
+        "codigo": "clasico",
+        "nombre": "Clásico",
+        "muestra": "#c98f5a"
+      },
+      {
+        "codigo": "ceniza",
+        "nombre": "Ceniza",
+        "muestra": "#97918c"
+      },
+      {
+        "codigo": "sombra",
+        "nombre": "Sombra",
+        "muestra": "#4e4943"
+      },
+      {
+        "codigo": "nieve",
+        "nombre": "Nieve",
+        "muestra": "#d3cec9"
+      },
+      {
+        "codigo": "dorado",
+        "nombre": "Dorado",
+        "muestra": "#cdb465"
+      },
+      {
+        "codigo": "celeste",
+        "nombre": "Celeste",
+        "muestra": "#60a3c3"
+      }
+    ],
+    "dragon": [
+      {
+        "codigo": "clasico",
+        "nombre": "Clásico",
+        "muestra": "#3ecf6e"
+      },
+      {
+        "codigo": "fuego",
+        "nombre": "Fuego",
+        "muestra": "#cf4c3e"
+      },
+      {
+        "codigo": "hielo",
+        "nombre": "Hielo",
+        "muestra": "#58b3c9"
+      },
+      {
+        "codigo": "violeta",
+        "nombre": "Violeta",
+        "muestra": "#8645c8"
+      },
+      {
+        "codigo": "sombra",
+        "nombre": "Sombra",
+        "muestra": "#3d4941"
+      },
+      {
+        "codigo": "nieve",
+        "nombre": "Nieve",
+        "muestra": "#c2cfc7"
+      }
+    ]
+  }
+}
