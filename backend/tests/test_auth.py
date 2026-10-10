@@ -24,6 +24,16 @@ def test_lista_especies(client):
     assert [e["codigo"] for e in r.json()] == ["gato", "perro", "dragon"]
 
 
+def test_especies_incluyen_sus_colores(client):
+    especies = {e["codigo"]: e for e in client.get("/api/especies").json()}
+    assert [v["codigo"] for v in especies["dragon"]["variantes"]][0] == "clasico"
+    assert "fuego" in [v["codigo"] for v in especies["dragon"]["variantes"]]
+    assert "fuego" not in [v["codigo"] for v in especies["gato"]["variantes"]]
+    muestra = especies["gato"]["variantes"][0]
+    assert set(muestra) == {"codigo", "nombre", "muestra"}
+    assert muestra["muestra"].startswith("#")
+
+
 # ---------- Registro válido ----------
 
 def test_registro_valido_crea_usuario_y_mascota(client):
@@ -34,7 +44,24 @@ def test_registro_valido_crea_usuario_y_mascota(client):
     me = client.get("/api/me", headers=auth(token)).json()
     assert me["correo"] == "ana@una.ac.cr"          # se guarda en minúscula
     assert me["descanso_largo_min"] == 15            # valor por defecto (RF-10)
-    assert me["mascota"] == {"nombre": "Michi", "especie": "gato", "especie_nombre": "Gato"}
+    assert me["mascota"] == {
+        "nombre": "Michi",
+        "especie": "gato",
+        "especie_nombre": "Gato",
+        "variante": "clasico",           # sin elegir color: el clásico
+        "variante_nombre": "Clásico",
+    }
+
+
+def test_registro_con_color(client):
+    # especie 3 = dragon (id por orden de inserción); fuego es un color del dragón
+    especies = {e["codigo"]: e["id"] for e in client.get("/api/especies").json()}
+    r = registrar(client, especie_id=especies["dragon"], variante="fuego", nombre_mascota="Brasas")
+    assert r.status_code == 201
+    me = client.get("/api/me", headers=auth(r.json()["access_token"])).json()
+    assert me["mascota"]["especie"] == "dragon"
+    assert me["mascota"]["variante"] == "fuego"
+    assert me["mascota"]["variante_nombre"] == "Fuego"
 
 
 # ---------- Registro inválido ----------
@@ -65,6 +92,19 @@ def test_especie_inexistente_no_crea_el_usuario(client):
     # misma transacción: el usuario tampoco se guardó
     login = client.post("/api/auth/login", json={"correo": REGISTRO["correo"], "password": REGISTRO["password"]})
     assert login.status_code == 401
+
+
+def test_color_de_otra_especie_no_crea_el_usuario(client):
+    # fuego es del dragón, no del gato (especie 1)
+    r = registrar(client, especie_id=1, variante="fuego")
+    assert r.status_code == 422
+    assert "color" in r.json()["detail"]
+    login = client.post("/api/auth/login", json={"correo": REGISTRO["correo"], "password": REGISTRO["password"]})
+    assert login.status_code == 401
+
+
+def test_color_inexistente(client):
+    assert registrar(client, variante="arcoiris").status_code == 422
 
 
 def test_password_no_se_guarda_en_texto_plano(client, conn):
