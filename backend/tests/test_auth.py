@@ -21,7 +21,7 @@ def auth(token):
 def test_lista_especies(client):
     r = client.get("/api/especies")
     assert r.status_code == 200
-    assert [e["codigo"] for e in r.json()] == ["gato", "perro", "conejo"]
+    assert [e["codigo"] for e in r.json()] == ["gato", "perro", "dragon"]
 
 
 # ---------- Registro válido ----------
