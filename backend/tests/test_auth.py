@@ -1,4 +1,7 @@
+import jwt
 import pytest
+
+from app.config import JWT_SECRET
 
 REGISTRO = {
     "correo": "Ana@UNA.ac.cr",
@@ -86,6 +89,7 @@ def test_login_correcto(client):
 @pytest.mark.parametrize("correo, password", [
     ("ana@una.ac.cr", "Incorrecta99"),   # contraseña equivocada
     ("nadie@una.ac.cr", "Pomodoro25"),   # correo que no existe
+    ("ana@una.ac.cr", "a1" * 50),        # más de 72 bytes: antes daba 500
 ])
 def test_login_incorrecto_mismo_mensaje(client, correo, password):
     registrar(client)
@@ -102,3 +106,10 @@ def test_me_sin_token(client):
 
 def test_me_con_token_falso(client):
     assert client.get("/api/me", headers=auth("no.es.un.token")).status_code == 401
+
+
+
+def test_me_con_token_sin_vencimiento(client):
+    # Firmado con la clave correcta pero sin "exp": no debe aceptarse
+    token = jwt.encode({"sub": "1"}, JWT_SECRET, algorithm="HS256")
+    assert client.get("/api/me", headers=auth(token)).status_code == 401

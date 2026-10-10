@@ -40,11 +40,12 @@ Ejemplo de registro:
 
 ## Reglas
 
-- **Correo:** se guarda en minúscula; un correo repetido (sin importar mayúsculas) responde `409`.
+- **Correo:** se guarda en minúscula; un correo repetido (sin importar mayúsculas) responde `409`. Esto revela qué correos tienen cuenta (el login no lo revela); se acepta como compromiso para el proyecto.
 - **Contraseña:** mínimo 8 caracteres, al menos una letra y un número, máximo 72 bytes (límite de bcrypt).
 - **Hash:** bcrypt; la contraseña nunca se guarda en texto plano (RNF-05).
 - **Usuario + mascota:** se crean en la **misma transacción**; si la especie no existe (`422`) no se guarda nada.
-- **Login incorrecto:** siempre `401` con el mismo mensaje, exista o no el correo.
+- **Login incorrecto:** siempre `401` con el mismo mensaje, exista o no el correo, incluso si la contraseña pasa de 72 bytes.
+- **Token:** debe traer `exp` y `sub`; un token sin vencimiento se rechaza con `401`.
 - **Consultas SQL:** todas parametrizadas con `%s` (RNF-06), nunca armadas con f-strings.
 
 ## Cómo proteger un endpoint (para los demás issues)
@@ -63,6 +64,8 @@ def listar_materias(usuario_id: int = Depends(usuario_actual), conn=Depends(get_
 ```
 
 ## Configuración
+
+> ⚠️ **Antes de levantar el proyecto, agreguen `JWT_SECRET` a su `.env`.** Si falta, es muy corto (menos de 32 caracteres) o es el mismo de `.env.example`, `docker compose` o el backend **no arrancan** a propósito: con una clave conocida cualquiera podría fabricar tokens de otro usuario.
 
 El archivo `.env` debe tener `JWT_SECRET` (ver `.env.example`). Para generar uno aleatorio:
 
