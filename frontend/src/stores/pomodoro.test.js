@@ -224,3 +224,22 @@ test('sin materia no se puede iniciar', () => {
   pomodoro.materiaId = null
   assert.equal(pomodoro.puedeIniciar, false)
 })
+
+// ---------- Cambio de cuenta ----------
+
+test('al cerrar sesión se borra la racha: otra persona no hereda los tomates', () => {
+  pomodoro.completados = 3
+  pomodoro.materiaId = 5
+  auth.cerrarSesion()
+  assert.equal(pomodoro.completados, 0)
+  assert.equal(pomodoro.materiaId, null)
+  assert.equal(pomodoro.fase, 'inactivo')
+})
+
+test('cerrar sesión con un pomodoro en marcha lo suelta del reloj', async () => {
+  await iniciarPomodoro()
+  assert.equal(pomodoro.fase, 'estudiando')
+  auth.cerrarSesion()
+  assert.equal(pomodoro.fase, 'inactivo')
+  assert.equal(pomodoro.sesion, null)
+})

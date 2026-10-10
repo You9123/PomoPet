@@ -3,7 +3,8 @@
 //   npm run sprites:variantes
 //
 // Lee      public/mascotas/<especie>/clasico/<estado>.png
-// Escribe  public/mascotas/<especie>/<variante>/<estado>.png  y  public/mascotas/variantes.json
+// Escribe  public/mascotas/<especie>/<variante>/<estado>.png
+//          database/init/04_variantes.sql  (la lista de colores que usa la API)
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -15,6 +16,10 @@ import { POR_ESPECIE, VARIANTES, esColorPrincipal, recolorear, recolorearImagen 
 const raiz = process.argv[2]
   ? path.resolve(process.argv[2])
   : fileURLToPath(new URL('../public/mascotas', import.meta.url))
+
+const sqlSalida = process.argv[3]
+  ? path.resolve(process.argv[3])
+  : fileURLToPath(new URL('../../database/init/04_variantes.sql', import.meta.url))
 
 const hex = ([r, g, b]) => `#${[r, g, b].map((n) => n.toString(16).padStart(2, '0')).join('')}`
 
@@ -32,7 +37,7 @@ function colorMuestra(imagen, especie) {
   return mejor ? mejor.split(',').map(Number) : [128, 128, 128]
 }
 
-const manifiesto = { especies: {} }
+const filasSql = []
 let archivos = 0
 
 for (const [especie, variantes] of Object.entries(POR_ESPECIE)) {
@@ -44,11 +49,10 @@ for (const [especie, variantes] of Object.entries(POR_ESPECIE)) {
   const estados = fs.readdirSync(origen).filter((f) => f.endsWith('.png'))
   const muestra = colorMuestra(leerPng(fs.readFileSync(path.join(origen, 'inactivo.png'))), especie)
 
-  manifiesto.especies[especie] = variantes.map((variante) => ({
-    codigo: variante,
-    nombre: VARIANTES[variante].nombre,
-    muestra: hex(recolorear(...muestra, especie, variante)),
-  }))
+  variantes.forEach((variante, i) => {
+    const color = hex(recolorear(...muestra, especie, variante))
+    filasSql.push(`    ('${especie}', '${variante}', '${VARIANTES[variante].nombre}', '${color}', ${i + 1})`)
+  })
 
   for (const variante of variantes.filter((v) => v !== 'clasico')) {
     const destino = path.join(raiz, especie, variante)
@@ -62,5 +66,16 @@ for (const [especie, variantes] of Object.entries(POR_ESPECIE)) {
   }
 }
 
-fs.writeFileSync(path.join(raiz, 'variantes.json'), `${JSON.stringify(manifiesto, null, 2)}\n`)
-process.stdout.write(`Listo: ${archivos} sprites en ${raiz}\n`)
+const sql = [
+  '-- GENERADO por `npm run sprites:variantes` (frontend/tools/variantes.mjs). No editar a mano.',
+  '-- Colores disponibles de cada especie; `codigo` es la carpeta de imágenes en el frontend.',
+  'INSERT INTO variantes_mascota (especie_id, codigo, nombre, muestra, orden)',
+  'SELECT e.id, v.codigo, v.nombre, v.muestra, v.orden',
+  'FROM (VALUES',
+  filasSql.join(',\n'),
+  ') AS v(especie, codigo, nombre, muestra, orden)',
+  'JOIN especies_mascota e ON e.codigo = v.especie;',
+  '',
+].join('\n')
+fs.writeFileSync(sqlSalida, sql)
+process.stdout.write(`Listo: ${archivos} sprites en ${raiz}\nSemilla SQL: ${sqlSalida}\n`)

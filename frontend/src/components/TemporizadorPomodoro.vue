@@ -79,6 +79,7 @@ watch(
       <div class="escenario__mascota">
         <MascotaSprite
           :especie="auth.especieCodigo ?? 'gato'"
+          :variante="auth.varianteCodigo"
           :estado="pomodoro.fase"
           :nombre="auth.perfil?.mascota?.nombre ?? 'Tu mascota'"
           :tamano="192"

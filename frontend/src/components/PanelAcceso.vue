@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 import { ApiError } from '../api/cliente.js'
 import { useAuthStore } from '../stores/auth.js'
@@ -11,11 +11,18 @@ const modo = ref('ingresar') // 'ingresar' | 'registro'
 const correo = ref('')
 const password = ref('')
 const especieId = ref(null)
+const variante = ref('clasico')
 const nombreMascota = ref('')
 const error = ref('')
 const enviando = ref(false)
 
 const esRegistro = computed(() => modo.value === 'registro')
+
+// Colores de la especie elegida; al cambiar de especie se vuelve al clásico
+const variantes = computed(() => auth.especies.find((e) => e.id === especieId.value)?.variantes ?? [])
+watch(especieId, () => {
+  variante.value = 'clasico'
+})
 
 onMounted(async () => {
   try {
@@ -35,6 +42,7 @@ async function enviar() {
         correo: correo.value,
         password: password.value,
         especieId: especieId.value,
+        variante: variante.value,
         nombreMascota: nombreMascota.value,
       })
     } else {
@@ -59,9 +67,32 @@ async function enviar() {
         <legend class="sr-only">Elige tu mascota</legend>
         <label v-for="e in auth.especies" :key="e.id" class="especie" :class="{ 'especie--activa': especieId === e.id }">
           <input v-model="especieId" type="radio" name="especie" :value="e.id" />
-          <MascotaSprite :especie="e.codigo" estado="inactivo" :nombre="e.nombre" :tamano="64" :animada="especieId === e.id" />
+          <MascotaSprite
+            :especie="e.codigo"
+            :variante="especieId === e.id ? variante : 'clasico'"
+            estado="inactivo"
+            :nombre="e.nombre"
+            :tamano="64"
+            :animada="especieId === e.id"
+          />
           <span class="especie__nombre">{{ e.nombre }}</span>
         </label>
+      </fieldset>
+
+      <fieldset v-if="esRegistro && variantes.length > 1" class="colores">
+        <legend class="colores__titulo">Elige su color</legend>
+        <div class="colores__lista">
+          <label
+            v-for="v in variantes"
+            :key="v.codigo"
+            class="color"
+            :class="{ 'color--activo': variante === v.codigo }"
+          >
+            <input v-model="variante" type="radio" name="color" :value="v.codigo" />
+            <span class="color__muestra" :style="{ background: v.muestra }" aria-hidden="true" />
+            <span class="color__nombre">{{ v.nombre }}</span>
+          </label>
+        </div>
       </fieldset>
 
       <label v-if="esRegistro" class="campo">
@@ -171,6 +202,76 @@ async function enviar() {
 .especie__nombre {
   font-family: var(--fuente-pixel);
   font-size: 0.6rem;
+  color: var(--texto);
+}
+
+.colores {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.colores__titulo {
+  padding: 0;
+  margin-bottom: 0.6rem;
+  font-family: var(--fuente-pixel);
+  font-size: 0.7rem;
+  color: var(--texto-suave);
+}
+
+.colores__lista {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+}
+
+.color {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.5rem;
+  margin: 3px;
+  cursor: pointer;
+  background: var(--tinta);
+  box-shadow:
+    0 -3px 0 0 var(--superficie-alta),
+    0 3px 0 0 var(--superficie-alta),
+    -3px 0 0 0 var(--superficie-alta),
+    3px 0 0 0 var(--superficie-alta);
+}
+
+.color--activo {
+  background: var(--superficie-alta);
+  box-shadow:
+    0 -3px 0 0 var(--oro),
+    0 3px 0 0 var(--oro),
+    -3px 0 0 0 var(--oro),
+    3px 0 0 0 var(--oro);
+}
+
+.color input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  cursor: pointer;
+}
+
+.color:has(input:focus-visible) {
+  outline: 3px solid var(--foco);
+  outline-offset: 5px;
+}
+
+.color__muestra {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  box-shadow: 0 0 0 2px var(--tinta);
+}
+
+.color__nombre {
+  font-family: var(--fuente-pixel);
+  font-size: 0.55rem;
   color: var(--texto);
 }
 

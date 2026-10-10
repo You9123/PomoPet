@@ -26,11 +26,13 @@ function guardarToken(valor) {
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(leerToken())
-  const perfil = ref(null) // { id, correo, descanso_largo_min, mascota: { nombre, especie, especie_nombre } }
-  const especies = ref([])
+  // perfil: { id, correo, descanso_largo_min, mascota: { nombre, especie, especie_nombre, variante, variante_nombre } }
+  const perfil = ref(null)
+  const especies = ref([]) // [{ id, codigo, nombre, descripcion, variantes: [{ codigo, nombre, muestra }] }]
 
   const autenticado = computed(() => Boolean(token.value))
   const especieCodigo = computed(() => perfil.value?.mascota?.especie ?? null)
+  const varianteCodigo = computed(() => perfil.value?.mascota?.variante ?? 'clasico')
   const descansoLargoMin = computed(
     () => perfil.value?.descanso_largo_min ?? DESCANSO_LARGO_POR_DEFECTO_MIN,
   )
@@ -61,10 +63,16 @@ export const useAuthStore = defineStore('auth', () => {
     await cargarPerfil()
   }
 
-  async function registrar({ correo, password, especieId, nombreMascota }) {
+  async function registrar({ correo, password, especieId, variante = 'clasico', nombreMascota }) {
     const r = await api('/api/auth/registro', {
       metodo: 'POST',
-      cuerpo: { correo, password, especie_id: especieId, nombre_mascota: nombreMascota },
+      cuerpo: {
+        correo,
+        password,
+        especie_id: especieId,
+        variante,
+        nombre_mascota: nombreMascota,
+      },
     })
     fijarToken(r.access_token)
     await cargarPerfil()
@@ -76,6 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
     especies,
     autenticado,
     especieCodigo,
+    varianteCodigo,
     descansoLargoMin,
     cargarPerfil,
     cargarEspecies,

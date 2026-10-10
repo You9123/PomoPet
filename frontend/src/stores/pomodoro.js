@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 
 import { ApiError, api } from '../api/cliente.js'
@@ -125,7 +125,8 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   }
 
   function detenerReloj() {
-    if (intervalo !== null) clearInterval(intervalo)
+    if (intervalo === null) return
+    clearInterval(intervalo)
     intervalo = null
     document.removeEventListener('visibilitychange', tick)
   }
@@ -278,7 +279,18 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     detenerReloj()
     volverAlInicio()
     materiaId.value = null
+    completados.value = 0 // la racha es de cada persona: no se hereda al cambiar de cuenta
+    guardarCompletados(0)
   }
+
+  // Al cerrar sesión (botón Salir o token vencido) se limpia todo lo de la persona anterior
+  watch(
+    () => auth.autenticado,
+    (autenticado) => {
+      if (!autenticado) reiniciarTodo()
+    },
+    { flush: 'sync' },
+  )
 
   return {
     fase,
