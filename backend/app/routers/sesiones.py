@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.db import get_conn
+from app.db import CONEXION
 from app.pomodoro import DURACION_MINIMA, tiempo_efectivo, xp_por_sesion
 from app.seguridad import usuario_actual
 
@@ -85,7 +85,7 @@ def cerrar_pausa_abierta(conn, sesion_id: int) -> None:
 # ---------- Endpoints ----------
 
 @router.post("/sesiones", response_model=SesionOut, status_code=status.HTTP_201_CREATED)
-def iniciar_sesion(datos: IniciarSesion, usuario_id: int = Depends(usuario_actual), conn=Depends(get_conn)):
+def iniciar_sesion(datos: IniciarSesion, usuario_id: int = Depends(usuario_actual), conn=CONEXION):
     """RF-01: inicia un pomodoro. La hora de inicio la fija el servidor (RF-09)."""
     # Bloquea al usuario: dos peticiones simultáneas no pueden crear dos sesiones en curso
     conn.execute("SELECT 1 FROM usuarios WHERE id = %s FOR UPDATE", (usuario_id,))
@@ -126,7 +126,7 @@ def iniciar_sesion(datos: IniciarSesion, usuario_id: int = Depends(usuario_actua
 
 
 @router.get("/sesiones/actual", response_model=SesionOut | None)
-def sesion_actual(usuario_id: int = Depends(usuario_actual), conn=Depends(get_conn)):
+def sesion_actual(usuario_id: int = Depends(usuario_actual), conn=CONEXION):
     """La sesión en curso del usuario, o null. Sirve para retomar el temporizador al recargar la página."""
     fila = conn.execute(
         """
@@ -141,7 +141,7 @@ def sesion_actual(usuario_id: int = Depends(usuario_actual), conn=Depends(get_co
 
 
 @router.post("/sesiones/{sesion_id}/pausar", response_model=SesionOut)
-def pausar(sesion_id: int, usuario_id: int = Depends(usuario_actual), conn=Depends(get_conn)):
+def pausar(sesion_id: int, usuario_id: int = Depends(usuario_actual), conn=CONEXION):
     """RF-01: abre una pausa. El tiempo en pausa no cuenta para los 25 minutos."""
     fila = cargar_sesion(conn, sesion_id, usuario_id)
     exigir_en_curso(fila)
@@ -152,7 +152,7 @@ def pausar(sesion_id: int, usuario_id: int = Depends(usuario_actual), conn=Depen
 
 
 @router.post("/sesiones/{sesion_id}/reanudar", response_model=SesionOut)
-def reanudar(sesion_id: int, usuario_id: int = Depends(usuario_actual), conn=Depends(get_conn)):
+def reanudar(sesion_id: int, usuario_id: int = Depends(usuario_actual), conn=CONEXION):
     """RF-01: cierra la pausa abierta."""
     fila = cargar_sesion(conn, sesion_id, usuario_id)
     exigir_en_curso(fila)
@@ -163,7 +163,7 @@ def reanudar(sesion_id: int, usuario_id: int = Depends(usuario_actual), conn=Dep
 
 
 @router.post("/sesiones/{sesion_id}/finalizar", response_model=SesionOut)
-def finalizar(sesion_id: int, usuario_id: int = Depends(usuario_actual), conn=Depends(get_conn)):
+def finalizar(sesion_id: int, usuario_id: int = Depends(usuario_actual), conn=CONEXION):
     """RF-03 / RF-09: completa la sesión si el tiempo efectivo (sin pausas) es de 25 minutos o más.
 
     Si no alcanza, responde 409 y la sesión sigue en curso (no se escribe nada).
@@ -189,7 +189,7 @@ def finalizar(sesion_id: int, usuario_id: int = Depends(usuario_actual), conn=De
 
 
 @router.post("/sesiones/{sesion_id}/cancelar", response_model=SesionOut)
-def cancelar(sesion_id: int, usuario_id: int = Depends(usuario_actual), conn=Depends(get_conn)):
+def cancelar(sesion_id: int, usuario_id: int = Depends(usuario_actual), conn=CONEXION):
     """RF-11: cancela la sesión. Queda en el historial y no da XP."""
     fila = cargar_sesion(conn, sesion_id, usuario_id)
     exigir_en_curso(fila)
