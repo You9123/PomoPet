@@ -32,8 +32,7 @@ class SesionOut(BaseModel):
 
 # ---------- Utilidades ----------
 
-# La sesión del usuario con el tiempo en pausa ya sumado. FOR UPDATE: dos peticiones
-# a la misma sesión (por ejemplo finalizar y cancelar) se atienden una después de la otra.
+# La sesión del usuario con el tiempo en pausa ya sumado.
 # `now()` es la hora del servidor de BD: el cliente nunca decide cuánto tiempo pasó (RF-09).
 SQL_SESION = """
     SELECT s.id, s.materia_id, s.jefe_id, s.estado, s.inicio, s.fin, now() AS ahora,
@@ -43,12 +42,25 @@ SQL_SESION = """
     FROM sesiones s
     JOIN materias m ON m.id = s.materia_id
     WHERE s.id = %s AND m.usuario_id = %s
+"""
+
+# Bloquea la sesión: dos peticiones a la misma sesión (finalizar y cancelar, o un doble clic en
+# Pausar) se atienden una después de la otra.
+SQL_BLOQUEAR = """
+    SELECT s.id FROM sesiones s JOIN materias m ON m.id = s.materia_id
+    WHERE s.id = %s AND m.usuario_id = %s
     FOR UPDATE OF s
 """
 
 
 def cargar_sesion(conn, sesion_id: int, usuario_id: int) -> dict:
-    """Devuelve la sesión si es del usuario; si no, 404 (no revela sesiones ajenas)."""
+    """Devuelve la sesión si es del usuario; si no, 404 (no revela sesiones ajenas).
+
+    Primero se bloquea la sesión y DESPUÉS se leen sus pausas, en otra consulta. Si se hace todo en
+    una sola, la petición que esperó el bloqueo no vuelve a leer las pausas (READ COMMITTED solo
+    revisa la fila bloqueada) y ve una pausa que ya no existe o no ve la que acaba de abrirse.
+    """
+    conn.execute(SQL_BLOQUEAR, (sesion_id, usuario_id))
     fila = conn.execute(SQL_SESION, (sesion_id, usuario_id)).fetchone()
     if fila is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "La sesión no existe")
