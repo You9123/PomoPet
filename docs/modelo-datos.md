@@ -1,7 +1,7 @@
 # Modelo de datos — PomoPet
 
 Esquema en `database/init/01_schema.sql` (PostgreSQL 16).
-Datos iniciales: `02_logros.sql` (logros) y `03_especies.sql` (especies de mascota).
+Datos iniciales: `02_logros.sql` (logros), `03_especies.sql` (especies de mascota) y `04_variantes.sql` (colores; se genera con `npm run sprites:variantes`, no se edita a mano).
 Issue relacionado: #1 · Requerimientos: RF-01, RF-02, RF-06, RF-09, RF-10, RF-11, RF-12, RNF-03, RNF-05
 
 ## Diagrama entidad-relación
@@ -10,6 +10,8 @@ Issue relacionado: #1 · Requerimientos: RF-01, RF-02, RF-06, RF-09, RF-10, RF-1
 erDiagram
     usuarios ||--o| mascotas : "tiene"
     especies_mascota ||--o{ mascotas : "es de"
+    especies_mascota ||--o{ variantes_mascota : "tiene colores"
+    variantes_mascota ||--o{ mascotas : "se ve asi"
     usuarios ||--o{ materias : "tiene (max 20)"
     usuarios ||--o{ logros_usuario : "desbloquea"
     logros ||--o{ logros_usuario : "es otorgado en"
@@ -31,9 +33,17 @@ erDiagram
         varchar nombre
         text descripcion
     }
+    variantes_mascota {
+        int especie_id PK, FK
+        varchar codigo PK "carpeta de imagenes"
+        varchar nombre
+        char muestra "#RRGGBB del selector"
+        smallint orden
+    }
     mascotas {
         int usuario_id PK, FK "una por usuario"
         int especie_id FK
+        varchar variante FK "color, de su especie"
         varchar nombre
         timestamptz creado_en
     }
@@ -91,6 +101,7 @@ erDiagram
 | Descanso largo entre 15 y 30 minutos              | `CHECK` en `usuarios.descanso_largo_min`               | RF-10  |
 | Una mascota por usuario                           | Llave primaria `mascotas.usuario_id`                   | —      |
 | No se borra una especie que alguien usa           | Llave foránea sin `CASCADE`                            | RNF-03 |
+| El color de la mascota es de su especie           | Llave foránea compuesta `(especie_id, variante)`       | —      |
 | Una sesión en curso no tiene `fin`                | `CHECK ((estado = 'en_curso') = (fin IS NULL))`        | RF-01  |
 | Solo una pausa abierta por sesión                 | Índice único parcial `pausas_una_abierta`              | RF-01  |
 | El Jefe pertenece a la misma materia de la sesión | Llave foránea compuesta `(jefe_id, materia_id)`        | RF-06  |
@@ -131,7 +142,7 @@ La base de datos no puede validar todo. El backend debe:
 
 ## Pruebas
 
-`database/tests/pruebas_reglas.sql` prueba las 18 reglas dentro de una transacción que se
+`database/tests/pruebas_reglas.sql` prueba las 20 reglas dentro de una transacción que se
 deshace al final (no deja datos):
 
 ```bash

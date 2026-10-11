@@ -13,6 +13,7 @@ DECLARE
     j1 INT;                  -- jefe final
     s1 INT;                  -- sesión
     gato INT;                -- especie
+    u3 INT;                  -- usuario sin mascota (prueba 19 y 20)
     v_int INT; v_bool BOOLEAN;
 BEGIN
     INSERT INTO usuarios (correo, password_hash) VALUES ('ana@una.ac.cr',  'hash') RETURNING id INTO u1;
@@ -209,6 +210,25 @@ BEGIN
     EXCEPTION WHEN unique_violation THEN
         RAISE NOTICE 'OK 18. logro repetido rechazado';
     END;
+
+    -- ================ COLORES DE MASCOTA ================
+
+    INSERT INTO usuarios (correo, password_hash) VALUES ('carla@una.ac.cr', 'hash') RETURNING id INTO u3;
+
+    -- 19. Un color de otra especie (fuego es del dragón) no se puede usar en un gato
+    BEGIN
+        INSERT INTO mascotas (usuario_id, especie_id, variante, nombre) VALUES (u3, gato, 'fuego', 'Brasas');
+        RAISE EXCEPTION 'FALLO: aceptó un color de otra especie';
+    EXCEPTION WHEN foreign_key_violation THEN
+        RAISE NOTICE 'OK 19. color de otra especie rechazado';
+    END;
+
+    -- 20. Si no se elige color, queda el clásico
+    INSERT INTO mascotas (usuario_id, especie_id, nombre) VALUES (u3, gato, 'Nube');
+    IF (SELECT variante FROM mascotas WHERE usuario_id = u3) <> 'clasico' THEN
+        RAISE EXCEPTION 'FALLO: el color por defecto no es clasico';
+    END IF;
+    RAISE NOTICE 'OK 20. color por defecto: clasico';
 
     RAISE NOTICE '=== Todas las pruebas pasaron ===';
 END;
