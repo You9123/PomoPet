@@ -21,14 +21,14 @@ inactivo → estudiando ⇄ pausado → exito → descanso → inactivo
                 └→ cancelado → inactivo
 ```
 
-| Fase | Imagen de la mascota | Cómo se sale |
+| Fase | Imagen de la mascota (`<estado>.png`) | Cómo se sale |
 | --- | --- | --- |
-| `inactivo` | `inactivo.svg` | Botón **Iniciar** |
-| `estudiando` | `estudiando.svg` | **Pausar**, **Cancelar** o llegar a 0 |
-| `pausado` | `estudiando.svg` (atenuada) | **Reanudar** o **Cancelar** |
-| `exito` | `exito.svg` | Automático a los 4 s |
-| `descanso` | `descanso.svg` | Termina solo o **Saltar descanso** |
-| `cancelado` | `cancelado.svg` | **Volver a empezar** |
+| `inactivo` | `inactivo.png` | Botón **Iniciar** |
+| `estudiando` | `estudiando.png` | **Pausar**, **Cancelar** o llegar a 0 |
+| `pausado` | `estudiando.png` (atenuada) | **Reanudar** o **Cancelar** |
+| `exito` | `exito.png` | Automático a los 4 s |
+| `descanso` | `descanso.png` | Termina solo o **Saltar descanso** |
+| `cancelado` | `cancelado.png` | **Volver a empezar** |
 
 - **Descansos (RF-10):** corto de 5 min; tras 4 pomodoros seguidos, largo con `descanso_largo_min`
   del usuario (15 a 30). Cancelar rompe la racha. Son locales: no se guardan en la API.

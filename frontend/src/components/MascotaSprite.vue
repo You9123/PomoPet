@@ -6,7 +6,7 @@ import { computed, ref, watch } from 'vue'
 // La cantidad de cuadros sale de ancho / alto, así que una animación nueva solo necesita su PNG.
 const props = defineProps({
   especie: { type: String, default: 'gato' },
-  variante: { type: String, default: 'clasico' }, // color: ver public/mascotas/variantes.json
+  variante: { type: String, default: 'clasico' }, // color: ver `variantes` en GET /api/especies
   estado: { type: String, default: 'inactivo' },
   nombre: { type: String, default: 'Tu mascota' },
   tamano: { type: Number, default: 192 }, // lado aproximado en px (se ajusta a un múltiplo entero)
