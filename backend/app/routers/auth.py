@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from psycopg import errors
 from pydantic import BaseModel, Field, field_validator
 
-from app.db import get_conn
+from app.db import CONEXION
 from app.seguridad import crear_token, hashear_password, usuario_actual, verificar_password
 
 router = APIRouter(prefix="/api", tags=["usuarios"])
@@ -65,7 +65,7 @@ class Token(BaseModel):
 # ---------- Endpoints ----------
 
 @router.get("/especies")
-def listar_especies(conn=Depends(get_conn)):
+def listar_especies(conn=CONEXION):
     """Especies de mascota que se pueden elegir al registrarse, cada una con sus colores."""
     return conn.execute(
         """
@@ -84,7 +84,7 @@ def listar_especies(conn=Depends(get_conn)):
 
 
 @router.post("/auth/registro", response_model=Token, status_code=status.HTTP_201_CREATED)
-def registrar(datos: Registro, conn=Depends(get_conn)):
+def registrar(datos: Registro, conn=CONEXION):
     """Crea el usuario y su mascota en la misma transacción (si algo falla, no se guarda nada)."""
     # Se validan antes de insertar para poder dar un mensaje claro de cada caso
     if conn.execute("SELECT 1 FROM especies_mascota WHERE id = %s", (datos.especie_id,)).fetchone() is None:
@@ -115,7 +115,7 @@ def registrar(datos: Registro, conn=Depends(get_conn)):
 
 
 @router.post("/auth/login", response_model=Token)
-def iniciar_sesion(datos: Credenciales, conn=Depends(get_conn)):
+def iniciar_sesion(datos: Credenciales, conn=CONEXION):
     usuario = conn.execute(
         "SELECT id, password_hash FROM usuarios WHERE LOWER(correo) = %s",
         (datos.correo,),
@@ -128,7 +128,7 @@ def iniciar_sesion(datos: Credenciales, conn=Depends(get_conn)):
 
 
 @router.get("/me")
-def mi_perfil(usuario_id: int = Depends(usuario_actual), conn=Depends(get_conn)):
+def mi_perfil(usuario_id: int = Depends(usuario_actual), conn=CONEXION):
     """Datos del usuario del token, con su mascota."""
     fila = conn.execute(
         """

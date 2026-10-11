@@ -56,11 +56,11 @@ Agregar la dependencia `usuario_actual`; FastAPI responde `401` si el token falt
 ```python
 from fastapi import Depends
 
-from app.db import get_conn
+from app.db import CONEXION
 from app.seguridad import usuario_actual
 
 @router.get("/materias")   # router con prefix="/api"
-def listar_materias(usuario_id: int = Depends(usuario_actual), conn=Depends(get_conn)):
+def listar_materias(usuario_id: int = Depends(usuario_actual), conn=CONEXION):
     ...  # usar usuario_id en el WHERE, nunca un id que mande el cliente
 ```
 

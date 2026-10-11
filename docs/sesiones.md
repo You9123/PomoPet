@@ -40,6 +40,15 @@ Los cuatro últimos devuelven la sesión; si no es del usuario del token respond
 - Un Jefe ya derrotado (`v_estado_jefe.derrotado`) no se puede atacar. Su HP baja solo, porque la vista
   cuenta las sesiones completadas asociadas a él.
 
+## Concurrencia y COMMIT
+
+- **Doble clic en Pausar:** `cargar_sesion` bloquea la sesión en una consulta y lee sus pausas en otra,
+  así la petición que esperó el bloqueo ya ve lo que hizo la anterior: responde `409`, no `500`.
+- **COMMIT antes de responder:** los endpoints usan `conn=CONEXION` (`app/db.py`), que hace el COMMIT
+  antes de enviar la respuesta. Con `Depends(get_conn)` a secas, FastAPI lo haría después y el
+  cliente podría pedir algo que todavía no está guardado. Una prueba (`tests/test_conexion.py`)
+  falla si algún endpoint usa `get_conn` directamente.
+
 ## Probar a mano
 
 En http://localhost:8000/docs: registrarse → **Authorize** con el token → `POST /api/sesiones`.
