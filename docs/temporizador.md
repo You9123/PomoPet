@@ -94,10 +94,12 @@ npm run sprites:variantes   # recolorea el clasico, escribe las demás variantes
   recrear la base de datos (`docker compose down -v` y `up -d --build`).
 - Todavía **no se puede cambiar el color después de registrarse**; sería un `PATCH` a la mascota.
 
-## Provisional
+## Elegir la materia
 
-El número de materia se escribe a mano porque todavía no existe la API de materias (issue #4).
-Cuando exista, reemplazar ese campo en `components/TemporizadorPomodoro.vue` por un selector.
+Antes de iniciar se elige la materia en un selector (`GET /api/materias`); por defecto, la primera.
+Si el usuario no tiene materias, en lugar del selector aparece el botón **Crear materia**, que lleva a
+`/materias` (ver "Pantalla de materias" en `docs/materias.md`). Durante el pomodoro, el nombre de la
+materia se ve en la esquina del escenario.
 
 ## Pruebas
 

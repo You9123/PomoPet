@@ -149,6 +149,7 @@ h3 {
 
 .btn:focus-visible,
 .campo input:focus-visible,
+.campo select:focus-visible,
 .enlace:focus-visible {
   outline: 3px solid var(--foco);
   outline-offset: 4px;
@@ -162,7 +163,8 @@ h3 {
   color: var(--texto-suave);
 }
 
-.campo input {
+.campo input,
+.campo select {
   font-family: var(--fuente-texto);
   font-size: 1rem;
   padding: 0.7rem 0.8rem;

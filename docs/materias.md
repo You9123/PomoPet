@@ -42,3 +42,17 @@ Para crear: `{"nombre": "Cálculo", "color": "#4F46E5", "horas_semanales": 6}`. 
 - **No se puede borrar una materia con una sesión en curso** (`409`): hay que terminarla o cancelarla antes.
   Así el temporizador del frontend no se queda corriendo sobre una sesión que ya no existe.
 - **Borrar es definitivo:** también se borra el historial de sesiones de esa materia. El frontend debería pedir confirmación.
+
+## Pantalla de materias (frontend, issue #24)
+
+En `/materias` (menú **Materias**). Archivos: `stores/materias.js`, `components/PanelMaterias.vue` y
+`views/MateriasView.vue`.
+
+- **Lista** con color, pomodoros, minutos, XP y horas semanales de cada materia, y el contador `n/20`.
+- **Crear:** nombre, color (se propone uno que no esté en uso) y horas por semana (vacío = sin horas).
+  Con 20 materias el formulario se oculta y se explica el tope.
+- **Editar:** el `PATCH` envía solo los campos que cambiaron; si no cambió nada, no llama a la API.
+- **Borrar:** pide confirmación y avisa cuántas sesiones se pierden, además de los Jefes Finales.
+  La materia del pomodoro en curso no se puede borrar: el botón se desactiva.
+- **Errores:** se muestra el mensaje del backend (tope de 20, nombre repetido, sesión en curso).
+- Al cerrar sesión se limpia la lista. Las pruebas están en `stores/materias.test.js` (`npm test`).
