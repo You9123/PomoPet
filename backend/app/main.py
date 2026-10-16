@@ -1,14 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.config import ORIGENES_CORS
 from app.routers import auth, materias, sesiones
 
 app = FastAPI(title="PomoPet API", version="0.1.0")
 
-# Permite que el frontend (Vite corre en el puerto 5173) llame a la API
+# Permite que el frontend llame a la API: Vite en local (puerto 5173) y, en producción,
+# los dominios de CORS_ORIGINS (ver app/config.py)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=ORIGENES_CORS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
