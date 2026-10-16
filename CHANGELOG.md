@@ -1,6 +1,6 @@
 # Bitácora de cambios
 
-## [Sprint 2] - en curso (entrega: Semana 13)
+## [Sprint 2] - 2026-10-21
 
 ### Agregado
 
