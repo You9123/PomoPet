@@ -14,3 +14,9 @@ if len(JWT_SECRET) < 32 or JWT_SECRET == "cambia_esto_por_un_texto_largo_y_aleat
     )
     
 JWT_HORAS = int(os.environ.get("JWT_HORAS") or 24)
+
+
+# Orígenes (URL del frontend) que pueden llamar a la API desde el navegador (CORS).
+# El frontend local (Vite) siempre está permitido. En producción se agrega el dominio
+# publicado con CORS_ORIGINS, separando varios con coma. Ej.: https://pomopet.onrender.com
+ORIGENES_CORS = ["http://localhost:5173"] + [o.strip().rstrip("/") for o in (os.environ.get("CORS_ORIGINS") or "").split(",") if o.strip()]
