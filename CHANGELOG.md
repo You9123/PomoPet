@@ -20,6 +20,7 @@
 
 ### Cambiado
 
+- El nombre de materia repetido ignora también las tildes: "Calculo" choca con "Cálculo", pero la ñ sí cuenta (#26). Hay que recrear la BD local (`docker compose down -v`); para una BD con datos, como la de Render, está `database/migraciones/001_materias_nombre_sin_tildes.sql`.
 - Se reorganizaron los issues #3 a #12 para reflejar el nuevo modelo (mascota, pausas y datos calculados) y se creó el #16 (pruebas de la BD en el CI).
 
 ### Notas

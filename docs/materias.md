@@ -33,7 +33,8 @@ Para crear: `{"nombre": "Cálculo", "color": "#4F46E5", "horas_semanales": 6}`. 
   La petición bloquea la fila del usuario, así que dos peticiones simultáneas no pueden pasar ambas del tope.
   Borrar una materia libera un cupo.
 - **Nombre:** 1 a 100 caracteres, sin espacios al inicio ni al final, y único por usuario sin importar
-  mayúsculas ni espacios (índice `materias_nombre_unico`). Dos usuarios sí pueden tener el mismo nombre.
+  mayúsculas, espacios ni tildes (índice `materias_nombre_unico`): "Calculo" choca con "Cálculo".
+  La ñ sí cuenta ("Diseño" y "Diseno" son distintas). Dos usuarios sí pueden tener el mismo nombre.
 - **Color:** `#RRGGBB`. Por defecto `#888888`.
 - **Horas semanales:** de 0 a 168, o `null`. En `PATCH` se puede enviar `null` para quitarlas.
 - **El XP no se guarda** (3FN): `xp` es 100 × `pomodoros_completados`, igual que en `sesiones.md`.

@@ -50,7 +50,7 @@ erDiagram
     materias {
         serial id PK
         int usuario_id FK
-        varchar nombre "unico por usuario (sin mayusculas ni espacios)"
+        varchar nombre "unico por usuario (sin mayusculas, espacios ni tildes)"
         char color "#RRGGBB"
         smallint horas_semanales "0 a 168"
         timestamptz creado_en
@@ -95,7 +95,7 @@ erDiagram
 | Regla                                             | Cómo se implementa                                     | Req.   |
 | ------------------------------------------------- | ------------------------------------------------------ | ------ |
 | Máximo 20 materias por usuario                    | Trigger `materias_tope_20` (en `INSERT` y `UPDATE`)    | RF-02  |
-| Materia única por usuario                         | Índice único sobre `(usuario_id, LOWER(TRIM(nombre)))` | RF-02  |
+| Materia única por usuario (sin importar tildes)   | Índice único sobre `(usuario_id, LOWER(translate(TRIM(nombre), …)))` | RF-02  |
 | Contraseña nunca en texto plano                   | Solo existe la columna `password_hash`                 | RNF-05 |
 | Correo único sin importar mayúsculas              | Índice único sobre `LOWER(correo)`                     | RF-13  |
 | Descanso largo entre 15 y 30 minutos              | `CHECK` en `usuarios.descanso_largo_min`               | RF-10  |
@@ -142,7 +142,7 @@ La base de datos no puede validar todo. El backend debe:
 
 ## Pruebas
 
-`database/tests/pruebas_reglas.sql` prueba las 20 reglas dentro de una transacción que se
+`database/tests/pruebas_reglas.sql` prueba las 22 reglas dentro de una transacción que se
 deshace al final (no deja datos):
 
 ```bash
