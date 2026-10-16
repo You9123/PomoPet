@@ -57,6 +57,20 @@ def test_nombre_repetido_da_409_sin_importar_mayusculas_ni_espacios(client):
     assert "nombre" in r.json()["detail"]
 
 
+def test_nombre_repetido_da_409_sin_importar_tildes(client):
+    headers = registrar(client)
+    assert crear(client, headers, nombre="Cálculo").status_code == 201
+    for nombre in ("Calculo", "calculó", "CALCULO"):
+        r = crear(client, headers, nombre=nombre)
+        assert r.status_code == 409, nombre
+
+
+def test_la_enie_no_cuenta_como_tilde(client):
+    headers = registrar(client)
+    assert crear(client, headers, nombre="Diseño").status_code == 201
+    assert crear(client, headers, nombre="Diseno").status_code == 201
+
+
 def test_dos_usuarios_pueden_tener_el_mismo_nombre(client):
     assert crear(client, registrar(client, "ana@una.ac.cr")).status_code == 201
     assert crear(client, registrar(client, "beto@una.ac.cr")).status_code == 201
