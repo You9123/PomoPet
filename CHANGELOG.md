@@ -23,6 +23,10 @@
 - El nombre de materia repetido ignora también las tildes: "Calculo" choca con "Cálculo", pero la ñ sí cuenta (#26). Hay que recrear la BD local (`docker compose down -v`); para una BD con datos, como la de Render, está `database/migraciones/001_materias_nombre_sin_tildes.sql`.
 - Se reorganizaron los issues #3 a #12 para reflejar el nuevo modelo (mascota, pausas y datos calculados) y se creó el #16 (pruebas de la BD en el CI).
 
+### Corregido
+
+- `DELETE /api/materias/{id}` responde `409` si la materia tiene una sesión en curso, en lugar de borrarla sin avisar (el temporizador recibía un 404 al terminar). El XP de las materias usa `XP_POR_POMODORO` en vez de un 100 fijo.
+
 ### Notas
 
 - Después de actualizar `develop` hay que recrear la BD: `docker compose down -v` y `docker compose up --build` (el esquema ahora incluye `variantes_mascota`).

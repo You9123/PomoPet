@@ -13,7 +13,7 @@ Todos los endpoints requieren `Authorization: Bearer <token>` (ver `autenticacio
 | POST   | `/api/materias`         | Crea una materia → `201`                                      | `409` ya tiene 20 o el nombre está repetido; `422` datos inválidos |
 | GET    | `/api/materias/{id}`    | Una materia                                                   | `404` no existe o es de otro usuario                 |
 | PATCH  | `/api/materias/{id}`    | Cambia solo los campos enviados                               | `404`; `409` nombre repetido; `422` datos inválidos  |
-| DELETE | `/api/materias/{id}`    | Borra la materia con sus jefes, sesiones y pausas → `204`     | `404`                                                |
+| DELETE | `/api/materias/{id}`    | Borra la materia con sus jefes, sesiones y pausas → `204`     | `404`; `409` tiene una sesión en curso               |
 
 Para crear: `{"nombre": "Cálculo", "color": "#4F46E5", "horas_semanales": 6}`. Solo `nombre` es obligatorio.
 
@@ -37,6 +37,8 @@ Para crear: `{"nombre": "Cálculo", "color": "#4F46E5", "horas_semanales": 6}`. 
   La ñ sí cuenta ("Diseño" y "Diseno" son distintas). Dos usuarios sí pueden tener el mismo nombre.
 - **Color:** `#RRGGBB`. Por defecto `#888888`.
 - **Horas semanales:** de 0 a 168, o `null`. En `PATCH` se puede enviar `null` para quitarlas.
-- **El XP no se guarda** (3FN): `xp` es 100 × `pomodoros_completados`, igual que en `sesiones.md`.
+- **El XP no se guarda** (3FN): `xp` es `XP_POR_POMODORO` (100) × `pomodoros_completados`, igual que en `sesiones.md`.
 - Una materia de otro usuario responde `404`, igual que una inexistente, para no revelar su existencia.
+- **No se puede borrar una materia con una sesión en curso** (`409`): hay que terminarla o cancelarla antes.
+  Así el temporizador del frontend no se queda corriendo sobre una sesión que ya no existe.
 - **Borrar es definitivo:** también se borra el historial de sesiones de esa materia. El frontend debería pedir confirmación.
