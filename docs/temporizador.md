@@ -33,9 +33,9 @@ inactivo → estudiando ⇄ pausado → exito → descanso → inactivo
 - **Descansos (RF-10):** corto de 5 min; tras 4 pomodoros seguidos, largo con `descanso_largo_min`
   del usuario (15 a 30). Cancelar rompe la racha. Son locales: no se guardan en la API.
 - **Recargar la página:** `GET /api/sesiones/actual` retoma la sesión en curso, con su pausa.
-- **Mascotas (pixel art):** una tira horizontal PNG por estado y variante de color en
-  `public/mascotas/<especie>/<variante>/<estado>.png` (gato, perro, dragon). Ver más abajo.
-  Para agregar una especie, crear su carpeta con los 5 archivos.
+- **Mascotas (pixel art):** una tira horizontal PNG por estado, color y etapa de evolución en
+  `public/mascotas/<especie>/<variante>/<etapa>/<estado>.png` (gato, perro, dragon). Ver más abajo.
+  Para agregar una especie, crear su carpeta con las 4 etapas x 5 estados.
 
 ## Mascotas: sprites y variantes de color
 
@@ -43,13 +43,23 @@ Cada mascota es pixel art animado: una **tira horizontal PNG por estado**, de cu
 (32 x 32, 4 cuadros), en:
 
 ```
-frontend/public/mascotas/<especie>/<variante>/<estado>.png
-                         dragon    clasico     estudiando.png
+frontend/public/mascotas/<especie>/<variante>/<etapa>/<estado>.png
+                         dragon    clasico     joven    estudiando.png
 ```
 
 - **Especies:** `gato`, `perro`, `dragon` (el `codigo` de `especies_mascota`).
 - **Estados (5 archivos):** `inactivo`, `estudiando`, `exito`, `cancelado`, `descanso`.
   `pausado` reutiliza `estudiando`, congelado.
+- **Etapas (evolución, RF-04):** `cria`, `joven`, `adulta`, `legendaria`, las mismas de `GET /api/me`
+  (`mascota.etapa.codigo`, ver `gamificacion.md`). Cada una tiene su dibujo:
+
+| Etapa | Cómo se ve |
+| --- | --- |
+| `cria` | Cuerpo y cabeza más pequeños, con la cáscara del huevo como gorrito (alitas pequeñas en el dragón) |
+| `joven` | El dibujo base |
+| `adulta` | Cuerpo más ancho y bufanda roja |
+| `legendaria` | Bufanda real morada, corona dorada con gema y destellos alrededor |
+
 - **Variantes:** `clasico` es el arte original; las demás son recoloreos automáticos.
 
 | Especie | Variantes |
@@ -60,11 +70,13 @@ frontend/public/mascotas/<especie>/<variante>/<estado>.png
 
 La lista de colores de cada especie vive en la base de datos (`variantes_mascota`) y la API la
 entrega en `GET /api/especies`, que es lo que usa el selector del registro. El componente
-`MascotaSprite` recibe la `variante` como propiedad (por defecto `clasico`).
+`MascotaSprite` recibe la `variante` (por defecto `clasico`) y la `etapa` (por defecto `joven`) como
+propiedades. El temporizador usa la etapa del perfil (`auth.etapaCodigo`, `cria` mientras no haya perfil)
+y el registro muestra a todas como cría, porque así empieza cada mascota.
 
 ### Cómo se generan
 
-Los PNG se generan por código, así que nunca se dibujan a mano 90 archivos:
+Los PNG se generan por código, así que nunca se dibujan a mano 360 archivos (3 especies x 6 colores x 4 etapas x 5 estados):
 
 ```bash
 cd frontend
@@ -72,12 +84,12 @@ npm run sprites:base        # dibuja el arte original (variante clasico)
 npm run sprites:variantes   # recolorea el clasico, escribe las demás variantes y database/init/04_variantes.sql
 ```
 
-- **Cambiar un dibujo, agregar un estado o una especie:** se edita `tools/sprites-base.mjs` y se
-  vuelven a correr los dos comandos.
+- **Cambiar un dibujo, agregar un estado, una etapa o una especie:** se edita `tools/sprites-base.mjs` y se
+  vuelven a correr los dos comandos. Las pruebas de `tools/sprites.test.js` avisan si falta algún archivo.
 - **Agregar o quitar una variante:** `tools/recolor.js` (`VARIANTES` define cada color y
   `POR_ESPECIE` cuáles tiene cada especie).
 - El recoloreado solo toca el color principal de la especie; contorno, ojos, accesorios y efectos
-  (cuernos del dragón, estrellas, libro, nube, zzz) se conservan. Funciona con cualquier sprite
+  (cuernos del dragón, estrellas, libro, nube, zzz, cáscara, bufanda y corona) se conservan. Funciona con cualquier sprite
   `clasico`, incluso uno dibujado a mano.
 - El tamaño se ajusta a un **múltiplo entero** y se dibuja con `image-rendering: pixelated`.
 

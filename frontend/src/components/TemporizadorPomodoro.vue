@@ -80,6 +80,7 @@ watch(
         <MascotaSprite
           :especie="auth.especieCodigo ?? 'gato'"
           :variante="auth.varianteCodigo"
+          :etapa="auth.etapaCodigo"
           :estado="pomodoro.fase"
           :nombre="auth.perfil?.mascota?.nombre ?? 'Tu mascota'"
           :tamano="192"
