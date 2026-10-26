@@ -54,5 +54,5 @@ El `codigo` es estable y sirve para el frontend; el `nombre` es el texto para mo
 
 - Pantalla de materias: el rango y el nivel de cada materia.
 - Temporizador: la etapa y el nivel de la mascota junto a su nombre, y **el dibujo cambia con la etapa**
-  (cría con cascarón, joven, adulta con bufanda, legendaria con corona; ver `temporizador.md`).
+  (cría en un cascarón, joven, adulta con capa y bufanda, legendaria con alas, corona y capa real; ver `temporizador.md`).
   Se recargan al completar un pomodoro.

@@ -55,10 +55,10 @@ frontend/public/mascotas/<especie>/<variante>/<etapa>/<estado>.png
 
 | Etapa | Cómo se ve |
 | --- | --- |
-| `cria` | Cuerpo y cabeza más pequeños, con la cáscara del huevo como gorrito (alitas pequeñas en el dragón) |
+| `cria` | Diminuta: solo una cabeza asomando de media cáscara de huevo (alitas pequeñas en el dragón) |
 | `joven` | El dibujo base |
-| `adulta` | Cuerpo más ancho y bufanda roja |
-| `legendaria` | Bufanda real morada, corona dorada con gema y destellos alrededor |
+| `adulta` | Cuerpo más ancho, capa roja que se abre detrás y bufanda que ondea |
+| `legendaria` | Alas grandes (plumas blancas; doradas en el dragón), capa real morada con armiño, corona con gemas, contorno dorado y estrellas |
 
 - **Variantes:** `clasico` es el arte original; las demás son recoloreos automáticos.
 
@@ -89,7 +89,7 @@ npm run sprites:variantes   # recolorea el clasico, escribe las demás variantes
 - **Agregar o quitar una variante:** `tools/recolor.js` (`VARIANTES` define cada color y
   `POR_ESPECIE` cuáles tiene cada especie).
 - El recoloreado solo toca el color principal de la especie; contorno, ojos, accesorios y efectos
-  (cuernos del dragón, estrellas, libro, nube, zzz, cáscara, bufanda y corona) se conservan. Funciona con cualquier sprite
+  (cuernos del dragón, estrellas, libro, nube, zzz, cáscara, capa, bufanda, alas y corona) se conservan. Funciona con cualquier sprite
   `clasico`, incluso uno dibujado a mano.
 - El tamaño se ajusta a un **múltiplo entero** y se dibuja con `image-rendering: pixelated`.
 

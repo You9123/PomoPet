@@ -85,16 +85,18 @@ const ESPECIES = {
 }
 
 // Etapas de evolución, de la más pequeña a la más grande (mismos códigos que `backend/app/gamificacion.py`).
-//   cria       cascarón en la cabeza, cuerpo corto y cabeza más pequeña
+// Cada una cambia la silueta, no solo un detalle:
+//   cria       diminuta: solo una cabeza grande asomando de media cáscara de huevo
 //   joven      el dibujo base
-//   adulta     cuerpo más ancho y bufanda roja
-//   legendaria bufanda real, corona dorada y destellos alrededor
+//   adulta     cuerpo más ancho, capa roja que se abre detrás y broche dorado
+//   legendaria alas, capa real con armiño, corona grande con gemas, doble contorno dorado y estrellas
 // Los colores de los accesorios quedan fuera del rango de matiz que recolorea `recolor.js`,
 // así que las variantes de color solo cambian el pelaje o las escamas.
 const ETAPAS = ['cria', 'joven', 'adulta', 'legendaria']
 const CASCARON = { claro: '#fff8ee', sombra: '#cfd3e8' }
-const BUFANDA = { roja: ['#ff5a3c', '#b8321c'], real: ['#7c5cff', '#4b2fd0'] }
-const ORO = { claro: '#ffd23f', oscuro: '#c99a00' }
+const CAPA = { roja: ['#ff5a3c', '#b8321c'], real: ['#7c5cff', '#4b2fd0'] }
+const ORO = { claro: '#ffd23f', oscuro: '#c99a00', brillo: '#fff3a8' }
+const PLUMA = { claro: '#fff8ee', sombra: '#cfd3e8' }
 
 // ---------- Dibujo de una mascota ----------
 // o = { dy (rebote), ojos, boca, cuadro (0..3), etapa }
@@ -105,36 +107,50 @@ function dibujar(especie, o) {
   const dy = o.dy ?? 0
   const etapa = o.etapa ?? 'joven'
   const cria = etapa === 'cria'
-  const grande = etapa === 'adulta' || etapa === 'legendaria'
+  const adulta = etapa === 'adulta'
+  const legendaria = etapa === 'legendaria'
+  const grande = adulta || legendaria
   const cabY = (cria ? 19 : 17) + dy
-  const rxCab = cria ? 8 : 9 // radios de la cabeza
-  const ryCab = cria ? 7 : 8
-  const bajar = cria ? 3 : 0 // orejas y cuernos bajan con la cabeza
+  const rxCab = cria ? 7 : 9 // radios de la cabeza
+  const ryCab = cria ? 6 : 8
+  const bajar = cria ? 4 : 0 // orejas y cuernos bajan con la cabeza
   const par = o.cuadro % 2
+  const aleo = par ? -2 : 0
 
-  // cola
-  const tx = cria ? -1 : 0 // el cuerpo de la cría es más angosto: la cola se acerca
-  if (especie === 'gato') {
-    L.rect(24 + tx, 22 + dy - par, 2, 6, e.base)
-    L.rect(25 + tx, 19 + dy - par, 3, 3, e.base)
-    L.px(27 + tx, 19 + dy - par, e.detalle)
-  } else if (especie === 'perro') {
-    const mueve = par ? 0 : -1
-    L.rect(24 + tx, 24 + dy + mueve, 3, 2, e.sombra)
-    L.px(26 + tx, 23 + dy + mueve, e.sombra)
-  } else {
-    L.rect(23 + tx, 26 + dy, 4, 2, e.base)
-    L.rect(26 + tx, 25 + dy, 3, 2, e.base)
-    L.tri(28 + tx, 23 + dy, 31 + tx, 26 + dy, 28 + tx, 27 + dy, e.detalle)
+  // alas de la legendaria: capa aparte (con su propio contorno oscuro) que se pega detrás al final
+  let fondo = null
+  if (legendaria) {
+    fondo = new Lienzo()
+    alas(fondo, especie, dy, aleo)
+    fondo.contorno(TINTA)
   }
 
-  // alas del dragón (detrás del cuerpo)
-  if (especie === 'dragon') {
-    const aleo = par ? -2 : 0
+  // la capa va detrás del cuerpo
+  if (grande) capa(L, dy, legendaria ? CAPA.real : CAPA.roja, legendaria)
+
+  // cola
+  if (!cria) {
+    if (especie === 'gato') {
+      L.rect(24, 22 + dy - par, 2, 6, e.base)
+      L.rect(25, 19 + dy - par, 3, 3, e.base)
+      L.px(27, 19 + dy - par, e.detalle)
+    } else if (especie === 'perro') {
+      const mueve = par ? 0 : -1
+      L.rect(24, 24 + dy + mueve, 3, 2, e.sombra)
+      L.px(26, 23 + dy + mueve, e.sombra)
+    } else {
+      L.rect(23, 26 + dy, 4, 2, e.base)
+      L.rect(26, 25 + dy, 3, 2, e.base)
+      L.tri(28, 23 + dy, 31, 26 + dy, 28, 27 + dy, e.detalle)
+    }
+  }
+
+  // alas del dragón (detrás del cuerpo); la legendaria las lleva doradas, ver `alas`
+  if (especie === 'dragon' && !legendaria) {
     if (cria) {
-      // alitas pequeñas
-      L.tri(9, 23 + dy, 4, 19 + dy + aleo, 11, 19 + dy, e.sombra)
-      L.tri(23, 23 + dy, 28, 19 + dy + aleo, 21, 19 + dy, e.sombra)
+      // alitas pequeñas a los lados de la cabeza
+      L.tri(9, 22 + dy, 3, 16 + dy + aleo, 10, 17 + dy, e.sombra)
+      L.tri(23, 22 + dy, 29, 16 + dy + aleo, 22, 17 + dy, e.sombra)
     } else {
       L.tri(7, 20 + dy, 1, 14 + dy + aleo, 10, 15 + dy, e.sombra)
       L.tri(25, 20 + dy, 31, 14 + dy + aleo, 22, 15 + dy, e.sombra)
@@ -143,18 +159,15 @@ function dibujar(especie, o) {
     }
   }
 
-  // cuerpo y patas
-  if (cria) {
-    L.elipse(cx, 26 + dy, 6, 4, e.base)
-    L.elipse(cx, 27 + dy, 3, 2, e.vientre)
-  } else {
+  // cuerpo y patas (la cría solo asoma la cabeza del cascarón)
+  if (!cria) {
     L.elipse(cx, 25 + dy, grande ? 8 : 7, 5, e.base)
     L.elipse(cx, 26 + dy, grande ? 5 : 4, 3, e.vientre)
+    L.rect(10, 28, 4, 3, e.sombra)
+    L.rect(18, 28, 4, 3, e.sombra)
+    L.rect(10, 28, 4, 1, e.base)
+    L.rect(18, 28, 4, 1, e.base)
   }
-  L.rect(10, 28, 4, 3, e.sombra)
-  L.rect(18, 28, 4, 3, e.sombra)
-  L.rect(10, 28, 4, 1, e.base)
-  L.rect(18, 28, 4, 1, e.base)
 
   // orejas / cuernos
   const b = bajar + dy
@@ -169,20 +182,20 @@ function dibujar(especie, o) {
   } else {
     L.tri(9, 11 + b, 7, 3 + b, 13, 9 + b, e.detalle)
     L.tri(23, 11 + b, 25, 3 + b, 19, 9 + b, e.detalle)
-    if (!cria && etapa !== 'legendaria') L.tri(14, 9 + b, 16, 4 + b, 18, 9 + b, e.sombra) // cresta (la corona la tapa)
+    if (!cria && !legendaria) L.tri(14, 9 + b, 16, 4 + b, 18, 9 + b, e.sombra) // cresta (la corona la tapa)
   }
 
   // cabeza
   L.elipse(cx, cabY, rxCab, ryCab, e.base)
-  L.elipse(cx, cabY - 3, cria ? 5 : 6, 3, e.luz) // brillo
-  if (especie === 'perro') L.elipse(cx, cabY + 3, 5, 4, e.vientre) // hocico
+  L.elipse(cx, cabY - 3, cria ? 4 : 6, 3, e.luz) // brillo
+  if (especie === 'perro') L.elipse(cx, cabY + 3, cria ? 4 : 5, cria ? 3 : 4, e.vientre) // hocico
   if (especie === 'gato') {
     L.rect(15, cabY - ryCab, 2, 3, e.detalle)
     L.rect(11, cabY - ryCab + 1, 1, 2, e.detalle)
     L.rect(20, cabY - ryCab + 1, 1, 2, e.detalle)
   }
   if (especie === 'dragon') {
-    L.elipse(cx, cabY + 3, 5, 3, e.vientre) // hocico
+    L.elipse(cx, cabY + 3, cria ? 4 : 5, cria ? 2 : 3, e.vientre) // hocico
     L.px(14, cabY + 3, e.sombra)
     L.px(18, cabY + 3, e.sombra)
   }
@@ -257,49 +270,97 @@ function dibujar(especie, o) {
 
   // mejillas
   if (o.boca === 'sonrisa' || o.boca === 'abierta') {
-    for (const x of [9, 10, 21, 22]) L.px(x, cabY + 3, '#ff8fa3')
+    for (const x of cria ? [10, 21] : [9, 10, 21, 22]) L.px(x, cabY + 3, '#ff8fa3')
   }
 
-  if (cria) cascaron(L, cabY - ryCab)
-  if (grande) bufanda(L, cabY, etapa === 'legendaria' ? BUFANDA.real : BUFANDA.roja)
-  if (etapa === 'legendaria') corona(L, cabY)
+  if (cria) cascaron(L)
+  if (adulta) bufanda(L, cabY, par)
+  if (legendaria) broche(L, cabY)
+  if (legendaria) corona(L, cabY)
 
   L.contorno(TINTA)
+  if (legendaria) L.contorno(ORO.claro) // segundo contorno, dorado: resplandor
+  if (fondo) {
+    for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) if (!L.p[y][x]) L.p[y][x] = fondo.p[y][x]
+  }
   return L
 }
 
 // ---------- Accesorios por etapa ----------
-/** Cría: la cáscara del huevo del que nació, como un gorrito con el borde en picos. */
-function cascaron(L, techo) {
-  L.rect(12, techo - 1, 9, 1, CASCARON.claro)
-  L.rect(11, techo, 11, 1, CASCARON.claro)
-  L.rect(11, techo + 1, 11, 1, CASCARON.sombra)
-  for (let x = 11; x <= 21; x += 2) L.px(x, techo + 2, CASCARON.sombra)
+/** Cría: media cáscara de huevo alrededor, con el borde en picos y la base redondeada. */
+function cascaron(L) {
+  for (let x = 8; x <= 24; x += 2) L.rect(x, 24, 1, 2, CASCARON.claro) // picos
+  L.rect(8, 26, 17, 3, CASCARON.claro)
+  L.rect(9, 29, 15, 1, CASCARON.claro)
+  L.rect(10, 30, 13, 1, CASCARON.sombra)
+  L.rect(12, 31, 9, 1, CASCARON.sombra)
+  L.rect(21, 27, 3, 2, CASCARON.sombra) // sombra del lado derecho
+  L.px(11, 27, '#ffb3c7') // manchitas
+  L.px(14, 28, '#ffb3c7')
+  L.px(18, 27, '#b9e6ff')
 }
 
-/** Adulta y legendaria: bufanda en el cuello con una punta colgando. */
-function bufanda(L, cabY, [claro, oscuro]) {
+/** Adulta y legendaria: capa abierta detrás del cuerpo; la real lleva armiño en el borde. */
+function capa(L, dy, [claro, oscuro], real) {
+  L.tri(16, 20 + dy, 2, 31, 30, 31, claro)
+  L.tri(16, 20 + dy, 2, 31, 11, 31, oscuro)
+  if (real) {
+    L.rect(2, 30, 29, 2, CASCARON.claro)
+    for (let x = 4; x <= 28; x += 4) L.px(x, 31, TINTA)
+  }
+}
+
+/** Adulta: bufanda roja con una punta larga que ondea al aire. */
+function bufanda(L, cabY, par) {
+  const [claro, oscuro] = CAPA.roja
   L.rect(9, cabY + 7, 14, 2, claro)
   L.rect(9, cabY + 8, 14, 1, oscuro)
-  L.rect(19, cabY + 9, 3, 4, claro)
-  L.rect(19, cabY + 12, 3, 1, oscuro)
+  L.rect(22, cabY + 6 - par, 4, 2, claro)
+  L.rect(25, cabY + 5 - par, 4, 2, claro)
+  L.rect(28, cabY + 4 - par * 2, 3, 2, oscuro)
 }
 
-/** Legendaria: corona dorada con una gema roja. */
+/** Legendaria: broche dorado con una gema que sujeta la capa. */
+function broche(L, cabY) {
+  L.rect(15, cabY + 8, 2, 2, ORO.claro)
+  L.px(15, cabY + 8, '#ff5a3c')
+}
+
+/** Legendaria: corona dorada grande con gemas. */
 function corona(L, cabY) {
-  L.rect(12, cabY - 8, 9, 2, ORO.claro)
-  L.rect(12, cabY - 7, 9, 1, ORO.oscuro)
-  for (const x of [12, 14, 16, 18, 20]) L.px(x, cabY - 9, ORO.claro)
-  L.px(16, cabY - 10, ORO.claro)
+  L.rect(11, cabY - 8, 11, 2, ORO.claro)
+  L.rect(11, cabY - 7, 11, 1, ORO.oscuro)
+  for (const x of [11, 13, 19, 21]) L.px(x, cabY - 9, ORO.claro)
+  L.rect(15, cabY - 9, 3, 1, ORO.claro)
+  L.rect(16, cabY - 10, 1, 2, ORO.claro)
+  L.px(16, cabY - 11, ORO.brillo)
+  L.px(13, cabY - 8, '#4cc9f0')
   L.px(16, cabY - 8, '#ff5a3c')
+  L.px(19, cabY - 8, '#4cc9f0')
 }
 
-/** Legendaria: destellos que titilan alrededor (solo sobre píxeles libres, después del contorno). */
-function destellos(L, cuadro) {
-  const lugares = [[3, 24], [29, 22], [2, 9], [30, 11], [6, 29], [26, 29]]
+/** Legendaria: alas grandes. Plumas blancas en el gato y el perro, doradas en el dragón. */
+function alas(L, especie, dy, aleo) {
+  const [claro, sombra] = especie === 'dragon' ? [ORO.claro, ORO.oscuro] : [PLUMA.claro, PLUMA.sombra]
+  const a = aleo // el ala aletea: la punta sube y baja
+  // ala izquierda: una mancha grande de sombra y, encima, tres plumas claras que se abren hacia arriba
+  L.tri(10, 28 + dy, 0, 1 + dy + a, 10, 8 + dy, sombra)
+  L.tri(10, 24 + dy, 1, 4 + dy + a, 10, 11 + dy, claro)
+  L.tri(10, 26 + dy, 0, 14 + dy + a, 10, 17 + dy, claro)
+  L.tri(10, 28 + dy, 2, 22 + dy + a, 10, 23 + dy, claro)
+  // ala derecha, en espejo
+  L.tri(21, 28 + dy, 31, 1 + dy + a, 21, 8 + dy, sombra)
+  L.tri(21, 24 + dy, 30, 4 + dy + a, 21, 11 + dy, claro)
+  L.tri(21, 26 + dy, 31, 14 + dy + a, 21, 17 + dy, claro)
+  L.tri(21, 28 + dy, 29, 22 + dy + a, 21, 23 + dy, claro)
+  for (const [x, y] of [[0, 1], [31, 1], [1, 4], [30, 4]]) L.px(x, y + dy + a, ORO.oscuro)
+}
+
+/** Legendaria: estrellas que titilan en las esquinas (solo si el lugar está libre). */
+function aura(L, cuadro) {
+  const lugares = [[3, 28], [28, 27], [3, 3], [28, 4]]
   lugares.forEach(([x, y], i) => {
-    if (L.p[y][x]) return
-    L.px(x, y, (cuadro + i) % 2 === 0 ? '#fff3a8' : '#ffd23f')
+    if ((cuadro + i) % 2 === 0 && !L.p[y][x]) estrella(L, x, y, i % 2 ? ORO.brillo : ORO.claro)
   })
 }
 
@@ -367,7 +428,6 @@ function cuadros(especie, estado, etapa) {
     }
     const L = dibujar(especie, { ...o, etapa })
     if (estado === 'estudiando') libro(L, c)
-    if (etapa === 'legendaria') destellos(L, c)
     if (estado === 'exito') {
       const pos = [[4, 6], [27, 8], [5, 14], [26, 4]]
       estrella(L, pos[c][0], pos[c][1], '#ffd23f')
@@ -378,6 +438,7 @@ function cuadros(especie, estado, etapa) {
       zeta(L, 24, 8 - Math.floor(c / 2), '#4cc9f0')
       if (c >= 2) zeta(L, 27, 3, '#9fe6ff')
     }
+    if (etapa === 'legendaria') aura(L, c)
     salida.push(L)
   }
   return salida
