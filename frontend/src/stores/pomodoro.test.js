@@ -106,6 +106,16 @@ test('si la pestaña estuvo dormida más de 25 min, al volver se finaliza solo',
   assert.equal(pomodoro.completados, 1)
 })
 
+test('al completar un pomodoro se recarga el perfil para actualizar nivel y etapa de la mascota', async () => {
+  await iniciarPomodoro()
+  const mascota = { especie: 'gato', xp_total: 500, nivel: 3, etapa: { codigo: 'joven', nombre: 'Joven' } }
+  responder('GET /api/me', ok({ id: 1, descanso_largo_min: 20, mascota }))
+  await terminarPomodoro()
+  await new Promise((r) => setTimeout(r, 0))
+  assert.ok(llamadas.includes('GET /api/me'))
+  assert.equal(auth.perfil.mascota.etapa.codigo, 'joven')
+})
+
 test('retomar una sesión usa los segundos efectivos del servidor', async () => {
   responder('GET /api/sesiones/actual', ok(sesion({ segundos_efectivos: 10 * 60 })))
   await pomodoro.recuperar()

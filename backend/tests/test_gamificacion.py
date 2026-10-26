@@ -4,8 +4,7 @@ Complementa `test_pomodoro.py` (XP, caso límite 24:59 vs 25:00 con y sin pausas
 (mismo caso límite por la API). Aquí van el tope de materias (20 vs 21), el daño al Jefe Final y el XP
 acumulado por materia, que viven en la BD.
 
-Pendiente: niveles/rangos y etapas de evolución de la mascota. Todavía no existen en el código; sus
-pruebas se agregan cuando se implementen (criterios del issue #7).
+Los niveles, rangos y etapas de evolución de la mascota se prueban en `test_niveles.py` (issue #8).
 """
 from datetime import datetime, timedelta
 

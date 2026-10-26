@@ -26,7 +26,8 @@ function guardarToken(valor) {
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(leerToken())
-  // perfil: { id, correo, descanso_largo_min, mascota: { nombre, especie, especie_nombre, variante, variante_nombre } }
+  // perfil: { id, correo, descanso_largo_min, mascota: { nombre, especie, especie_nombre, variante, variante_nombre,
+  //           xp_total, nivel, etapa: { codigo, nombre } } }
   const perfil = ref(null)
   const especies = ref([]) // [{ id, codigo, nombre, descripcion, variantes: [{ codigo, nombre, muestra }] }]
 

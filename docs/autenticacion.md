@@ -25,7 +25,7 @@ Se eligió JWT porque la API no necesita guardar sesiones en la BD y FastAPI lo 
 | GET    | `/api/especies`      | No        | Especies de mascota, cada una con sus colores (`variantes`) |
 | POST   | `/api/auth/registro` | No        | `201` + token                              |
 | POST   | `/api/auth/login`    | No        | `200` + token                              |
-| GET    | `/api/me`            | Sí        | Usuario, su mascota y `descanso_largo_min` |
+| GET    | `/api/me`            | Sí        | Usuario, su mascota (con `xp_total`, `nivel` y `etapa`, ver `gamificacion.md`) y `descanso_largo_min` |
 
 Ejemplo de registro:
 

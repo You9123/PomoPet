@@ -22,9 +22,11 @@ Para crear: `{"nombre": "Cálculo", "color": "#4F46E5", "horas_semanales": 6}`. 
   "id": 1, "nombre": "Cálculo", "color": "#4F46E5", "horas_semanales": 6,
   "creado_en": "2026-10-10T15:00:00Z",
   "pomodoros_completados": 4, "pomodoros_cancelados": 1, "minutos_estudiados": 108,
-  "xp": 400
+  "xp": 400, "nivel": 3, "rango": {"codigo": "novato", "nombre": "Novato"}
 }
 ```
+
+`nivel` y `rango` se calculan a partir del `xp` (ver `gamificacion.md`).
 
 ## Reglas
 
@@ -48,7 +50,7 @@ Para crear: `{"nombre": "Cálculo", "color": "#4F46E5", "horas_semanales": 6}`. 
 En `/materias` (menú **Materias**). Archivos: `stores/materias.js`, `components/PanelMaterias.vue` y
 `views/MateriasView.vue`.
 
-- **Lista** con color, pomodoros, minutos, XP y horas semanales de cada materia, y el contador `n/20`.
+- **Lista** con color, rango, nivel, pomodoros, minutos, XP y horas semanales de cada materia, y el contador `n/20`.
 - **Crear:** nombre, color (se propone uno que no esté en uso) y horas por semana (vacío = sin horas).
   Con 20 materias el formulario se oculta y se explica el tope.
 - **Editar:** el `PATCH` envía solo los campos que cambiaron; si no cambió nada, no llama a la API.

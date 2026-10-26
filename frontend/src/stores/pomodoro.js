@@ -229,6 +229,8 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
           guardarCompletados(completados.value)
           fase.value = 'exito'
           finCelebracionMs.value = reloj.ahora() + MS_CELEBRACION
+          // El XP cambió: se actualiza el nivel y la etapa de la mascota (si falla, se verán en la próxima carga)
+          auth.cargarPerfil().catch(() => {})
           return
         } catch (e) {
           // 409 = al servidor le faltan milisegundos por la latencia: se reintenta enseguida
