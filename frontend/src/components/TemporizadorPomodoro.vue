@@ -1,9 +1,10 @@
 <script setup>
-import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 
 import { POMODOROS_PARA_DESCANSO_LARGO, formatear } from '../utils/temporizador.js'
 import { useAuthStore } from '../stores/auth.js'
 import { usePomodoroStore } from '../stores/pomodoro.js'
+import JefeBarraVida from './JefeBarraVida.vue'
 import MascotaSprite from './MascotaSprite.vue'
 import TomatePixel from './TomatePixel.vue'
 
@@ -31,17 +32,56 @@ const rondas = computed(() => Array.from({ length: POMODOROS_PARA_DESCANSO_LARGO
 const enSesion = computed(() => pomodoro.fase === 'estudiando' || pomodoro.fase === 'pausado')
 const porcentaje = computed(() => `${Math.round(Math.min(1, Math.max(0, pomodoro.progreso)) * 100)}%`)
 
-// El número de materia se escribe a mano hasta que exista la API de materias (issue #4).
 const materia = computed({
   get: () => pomodoro.materiaId ?? '',
   set: (valor) => {
-    const n = Number.parseInt(valor, 10)
-    pomodoro.materiaId = Number.isInteger(n) && n > 0 ? n : null
+    pomodoro.materiaId = valor === '' ? null : Number(valor)
   },
 })
 
+const creandoMateria = ref(false)
+const nuevaMateria = reactive({ nombre: '' })
+
+async function crearMateria() {
+  const ok = await pomodoro.crearMateria({ nombre: nuevaMateria.nombre })
+  if (ok) {
+    creandoMateria.value = false
+    nuevaMateria.nombre = ''
+  }
+}
+
+// Jefe Final (RF-12): se elige uno de la materia o se crea uno nuevo
+const jefesActivos = computed(() => pomodoro.jefes.filter((j) => !j.derrotado))
+const creandoJefe = ref(false)
+const nuevoJefe = reactive({ nombre: '', hp_total: 10, fecha_limite: '' })
+
+const jefeElegido = computed({
+  get: () => pomodoro.jefeId ?? '',
+  set: (valor) => {
+    pomodoro.jefeId = valor === '' ? null : Number(valor)
+  },
+})
+
+async function crearJefe() {
+  const ok = await pomodoro.crearJefe({
+    nombre: nuevoJefe.nombre,
+    hp_total: Number(nuevoJefe.hp_total),
+    fecha_limite: nuevoJefe.fecha_limite || null,
+  })
+  if (ok) {
+    creandoJefe.value = false
+    nuevoJefe.nombre = ''
+    nuevoJefe.hp_total = 10
+    nuevoJefe.fecha_limite = ''
+  }
+}
+
+// Al cambiar de materia se traen sus jefes
+watch(() => pomodoro.materiaId, () => pomodoro.cargarJefes())
+
 onMounted(async () => {
   pomodoro.arrancarReloj()
+  await pomodoro.cargarMaterias()
   await pomodoro.recuperar()
 })
 
@@ -103,10 +143,50 @@ watch(
     </div>
 
     <div v-if="pomodoro.fase === 'inactivo'" class="campo">
-      <label for="materia">Número de materia</label>
-      <input id="materia" v-model="materia" type="number" min="1" inputmode="numeric" placeholder="1" />
-      <small>Provisional: el selector de materias llega con el issue #4.</small>
+      <label for="materia">Materia</label>
+      <select id="materia" v-model="materia">
+        <option value="">Elige una materia</option>
+        <option v-for="m in pomodoro.materias" :key="m.id" :value="m.id">{{ m.nombre }}</option>
+      </select>
+      <button v-if="!creandoMateria" type="button" class="btn btn--apagado" @click="creandoMateria = true">
+        + Nueva materia
+      </button>
+      <form v-else class="jefe-form" @submit.prevent="crearMateria">
+        <label for="materia-nombre">Nombre de la materia</label>
+        <input id="materia-nombre" v-model="nuevaMateria.nombre" type="text" maxlength="100" required />
+        <div class="acciones">
+          <button type="submit" class="btn btn--tomate" :disabled="pomodoro.ocupado">Crear materia</button>
+          <button type="button" class="btn btn--apagado" @click="creandoMateria = false">Cancelar</button>
+        </div>
+      </form>
     </div>
+
+    <div v-if="pomodoro.fase === 'inactivo' && pomodoro.materiaId" class="campo">
+      <label for="jefe">Jefe Final</label>
+      <select id="jefe" v-model="jefeElegido">
+        <option value="">Sin jefe</option>
+        <option v-for="j in jefesActivos" :key="j.id" :value="j.id">
+          {{ j.nombre }} ({{ j.hp_actual }}/{{ j.hp_total }} HP)
+        </option>
+      </select>
+      <button v-if="!creandoJefe" type="button" class="btn btn--apagado" @click="creandoJefe = true">
+        + Nuevo jefe
+      </button>
+      <form v-else class="jefe-form" @submit.prevent="crearJefe">
+        <label for="jefe-nombre">Nombre</label>
+        <input id="jefe-nombre" v-model="nuevoJefe.nombre" type="text" maxlength="100" required />
+        <label for="jefe-hp">HP (pomodoros)</label>
+        <input id="jefe-hp" v-model="nuevoJefe.hp_total" type="number" min="1" max="1000" required />
+        <label for="jefe-fecha">Fecha límite (opcional)</label>
+        <input id="jefe-fecha" v-model="nuevoJefe.fecha_limite" type="date" />
+        <div class="acciones">
+          <button type="submit" class="btn btn--tomate" :disabled="pomodoro.ocupado">Crear jefe</button>
+          <button type="button" class="btn btn--apagado" @click="creandoJefe = false">Cancelar</button>
+        </div>
+      </form>
+    </div>
+
+    <JefeBarraVida v-if="pomodoro.jefe" :jefe="pomodoro.jefe" />
 
     <div class="acciones">
       <button
@@ -301,6 +381,20 @@ watch(
 /* ----- Controles ----- */
 .campo {
   margin: 0 4px;
+}
+
+.campo select {
+  width: 100%;
+  padding: 0.5rem;
+  font: inherit;
+  color: var(--texto);
+  background: var(--tinta);
+}
+
+.jefe-form {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
 }
 
 .acciones {
