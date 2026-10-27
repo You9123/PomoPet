@@ -9,6 +9,7 @@
 - La pantalla de materias muestra el rango y el nivel de cada una, y el temporizador muestra la etapa y el nivel de la mascota (se actualizan al completar un pomodoro).
 - Sprites por etapa de evolución: cada mascota tiene un dibujo muy distinto por etapa: cría (diminuta, dentro de un cascarón), joven (el de siempre), adulta (capa roja y bufanda que ondea) y legendaria (alas, corona con gemas, capa real y contorno dorado), en todos sus colores: 360 sprites generados por código. Los PNG pasaron a `public/mascotas/<especie>/<variante>/<etapa>/<estado>.png`; el registro muestra a las mascotas como cría. Prueba nueva: `frontend/tools/sprites.test.js`.
 - Pruebas de los bordes de cada umbral en `backend/tests/test_niveles.py`.
+- Reproductor de audio ambiental (#10, RF-07): en la pantalla Pomodoro se elige lluvia, Lo-Fi o ruido blanco, con reproducir, pausar y volumen; la pista y el volumen se recuerdan en el navegador. Las pistas se generan por código (`npm run audio`), son obra propia y se publican como CC0 (`docs/audio.md`).
 
 ## [Sprint 2] - 2026-10-21
 
