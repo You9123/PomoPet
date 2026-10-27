@@ -2,8 +2,8 @@
 //
 //   npm run sprites:variantes
 //
-// Lee      public/mascotas/<especie>/clasico/<estado>.png
-// Escribe  public/mascotas/<especie>/<variante>/<estado>.png
+// Lee      public/mascotas/<especie>/clasico/<etapa>/<estado>.png
+// Escribe  public/mascotas/<especie>/<variante>/<etapa>/<estado>.png
 //          database/init/04_variantes.sql  (la lista de colores que usa la API)
 import fs from 'node:fs'
 import path from 'node:path'
@@ -46,8 +46,9 @@ for (const [especie, variantes] of Object.entries(POR_ESPECIE)) {
     process.stderr.write(`Falta ${origen}: se omite ${especie}\n`)
     continue
   }
-  const estados = fs.readdirSync(origen).filter((f) => f.endsWith('.png'))
-  const muestra = colorMuestra(leerPng(fs.readFileSync(path.join(origen, 'inactivo.png'))), especie)
+  // Una carpeta por etapa de evolución (cria, joven, adulta, legendaria)
+  const etapas = fs.readdirSync(origen, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name)
+  const muestra = colorMuestra(leerPng(fs.readFileSync(path.join(origen, 'joven', 'inactivo.png'))), especie)
 
   variantes.forEach((variante, i) => {
     const color = hex(recolorear(...muestra, especie, variante))
@@ -55,13 +56,15 @@ for (const [especie, variantes] of Object.entries(POR_ESPECIE)) {
   })
 
   for (const variante of variantes.filter((v) => v !== 'clasico')) {
-    const destino = path.join(raiz, especie, variante)
-    fs.mkdirSync(destino, { recursive: true })
-    for (const archivo of estados) {
-      const imagen = leerPng(fs.readFileSync(path.join(origen, archivo)))
-      const rgba = recolorearImagen(imagen.rgba, especie, variante)
-      fs.writeFileSync(path.join(destino, archivo), escribirPng(imagen.ancho, imagen.alto, rgba))
-      archivos++
+    for (const etapa of etapas) {
+      const destino = path.join(raiz, especie, variante, etapa)
+      fs.mkdirSync(destino, { recursive: true })
+      for (const archivo of fs.readdirSync(path.join(origen, etapa)).filter((f) => f.endsWith('.png'))) {
+        const imagen = leerPng(fs.readFileSync(path.join(origen, etapa, archivo)))
+        const rgba = recolorearImagen(imagen.rgba, especie, variante)
+        fs.writeFileSync(path.join(destino, archivo), escribirPng(imagen.ancho, imagen.alto, rgba))
+        archivos++
+      }
     }
   }
 }

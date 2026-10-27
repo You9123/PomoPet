@@ -5,6 +5,8 @@ from psycopg import errors
 from pydantic import BaseModel, Field, field_validator
 
 from app.db import CONEXION
+from app.gamificacion import etapa_mascota, nivel
+from app.pomodoro import XP_POR_POMODORO
 from app.seguridad import crear_token, hashear_password, usuario_actual, verificar_password
 
 router = APIRouter(prefix="/api", tags=["usuarios"])
@@ -145,6 +147,12 @@ def mi_perfil(usuario_id: int = Depends(usuario_actual), conn=CONEXION):
     ).fetchone()
     if fila is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "El usuario ya no existe")
+    # RF-04: el XP total es la suma de todas sus materias; la etapa y el nivel se calculan, no se guardan
+    completados = conn.execute(
+        "SELECT COALESCE(SUM(pomodoros_completados), 0) AS total FROM v_progreso_materia WHERE usuario_id = %s",
+        (usuario_id,),
+    ).fetchone()["total"]
+    xp_total = XP_POR_POMODORO * int(completados)
     return {
         "id": fila["id"],
         "correo": fila["correo"],
@@ -155,5 +163,8 @@ def mi_perfil(usuario_id: int = Depends(usuario_actual), conn=CONEXION):
             "especie_nombre": fila["especie_nombre"],
             "variante": fila["variante_codigo"],
             "variante_nombre": fila["variante_nombre"],
+            "xp_total": xp_total,
+            "nivel": nivel(xp_total),
+            "etapa": etapa_mascota(xp_total),
         },
     }

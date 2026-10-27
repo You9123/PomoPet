@@ -149,8 +149,9 @@ function queSeBorra(m) {
         <template v-else>
           <div class="materia__info">
             <p class="materia__nombre">{{ m.nombre }}</p>
+            <p class="materia__rango" :class="`materia__rango--${m.rango.codigo}`">{{ m.rango.nombre }}</p>
             <p class="materia__datos">
-              {{ m.pomodoros_completados }} pomodoros · {{ m.minutos_estudiados }} min · {{ m.xp }} XP
+              {{ m.pomodoros_completados }} pomodoros · {{ m.minutos_estudiados }} min · {{ m.xp }} XP · Nv {{ m.nivel }}
               <template v-if="m.horas_semanales !== null"> · {{ m.horas_semanales }} h/semana</template>
             </p>
             <p v-if="materiaEnCurso === m.id" class="materia__en-curso">Pomodoro en curso</p>
@@ -280,6 +281,17 @@ function queSeBorra(m) {
   font-size: 0.7rem;
   line-height: 1.5;
   overflow-wrap: anywhere;
+}
+
+.materia__rango {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--oro);
+}
+
+.materia__rango--novato {
+  color: var(--texto-suave);
 }
 
 .materia__datos,

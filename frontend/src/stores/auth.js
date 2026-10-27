@@ -26,13 +26,16 @@ function guardarToken(valor) {
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(leerToken())
-  // perfil: { id, correo, descanso_largo_min, mascota: { nombre, especie, especie_nombre, variante, variante_nombre } }
+  // perfil: { id, correo, descanso_largo_min, mascota: { nombre, especie, especie_nombre, variante, variante_nombre,
+  //           xp_total, nivel, etapa: { codigo, nombre } } }
   const perfil = ref(null)
   const especies = ref([]) // [{ id, codigo, nombre, descripcion, variantes: [{ codigo, nombre, muestra }] }]
 
   const autenticado = computed(() => Boolean(token.value))
   const especieCodigo = computed(() => perfil.value?.mascota?.especie ?? null)
   const varianteCodigo = computed(() => perfil.value?.mascota?.variante ?? 'clasico')
+  // Quien aún no estudió nada es una cría
+  const etapaCodigo = computed(() => perfil.value?.mascota?.etapa?.codigo ?? 'cria')
   const descansoLargoMin = computed(
     () => perfil.value?.descanso_largo_min ?? DESCANSO_LARGO_POR_DEFECTO_MIN,
   )
@@ -85,6 +88,7 @@ export const useAuthStore = defineStore('auth', () => {
     autenticado,
     especieCodigo,
     varianteCodigo,
+    etapaCodigo,
     descansoLargoMin,
     cargarPerfil,
     cargarEspecies,

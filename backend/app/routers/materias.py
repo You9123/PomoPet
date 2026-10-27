@@ -5,6 +5,7 @@ from psycopg import errors
 from pydantic import BaseModel, Field, field_validator
 
 from app.db import CONEXION
+from app.gamificacion import nivel, rango
 from app.pomodoro import XP_POR_POMODORO
 from app.seguridad import usuario_actual
 
@@ -61,6 +62,8 @@ class MateriaOut(BaseModel):
     pomodoros_cancelados: int
     minutos_estudiados: int
     xp: int                      # XP_POR_POMODORO por pomodoro completado; se calcula, no se guarda (3FN)
+    nivel: int                   # RF-04, a partir del XP (app.gamificacion)
+    rango: dict[str, str]        # RF-04: {"codigo", "nombre"}, a partir del XP
 
 
 # ---------- Utilidades ----------
@@ -75,7 +78,8 @@ SQL_MATERIA = """
 
 
 def a_respuesta(fila: dict) -> MateriaOut:
-    return MateriaOut(**fila, xp=XP_POR_POMODORO * fila["pomodoros_completados"])
+    xp = XP_POR_POMODORO * fila["pomodoros_completados"]
+    return MateriaOut(**fila, xp=xp, nivel=nivel(xp), rango=rango(xp))
 
 
 def cargar_materia(conn, materia_id: int, usuario_id: int) -> dict:

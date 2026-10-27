@@ -261,6 +261,8 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
           guardarCompletados(completados.value)
           fase.value = 'exito'
           finCelebracionMs.value = reloj.ahora() + MS_CELEBRACION
+          // El XP cambió: se actualiza el nivel y la etapa de la mascota (si falla, se verán en la próxima carga)
+          auth.cargarPerfil().catch(() => {})
           await cargarJefes() // el pomodoro le quitó 1 HP al jefe
           return
         } catch (e) {
