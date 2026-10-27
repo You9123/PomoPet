@@ -17,6 +17,7 @@
 - Selector de color de la mascota en el registro: tabla `variantes_mascota` y `mascotas.variante` (con llave foránea compuesta a la especie), `variante` en `POST /api/auth/registro`, colores en `GET /api/especies` y `variante` en `GET /api/me`. 2 reglas nuevas en `pruebas_reglas.sql` (20 en total).
 - API de materias (#4): `GET/POST /api/materias`, `GET/PATCH/DELETE /api/materias/{id}` con el progreso de cada una y tope de 20 por usuario validado en el backend además del trigger de la BD (`docs/materias.md`).
 - Pruebas de la lógica de gamificación (#7): bordes del XP (24:59 vs 25:00 con y sin pausas), tope de materias (20 sí, 21 no), daño al Jefe Final y progreso por materia (`backend/tests/test_gamificacion.py`). Niveles, rangos y etapas de evolución de la mascota quedan pendientes hasta que existan.
+- Modo Jefe Final (#9): `GET/POST /api/materias/{id}/jefes` y `GET/DELETE /api/jefes/{id}`; el HP sale de `v_estado_jefe`. En el temporizador se elige o crea el jefe y se muestra su barra de vida (`docs/jefes.md`).
 
 ### Cambiado
 
