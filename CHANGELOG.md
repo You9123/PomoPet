@@ -30,6 +30,7 @@
 - Pruebas de la lógica de gamificación (#7): bordes del XP (24:59 vs 25:00 con y sin pausas), tope de materias (20 sí, 21 no), daño al Jefe Final y progreso por materia (`backend/tests/test_gamificacion.py`). Niveles, rangos y etapas de evolución de la mascota quedan pendientes hasta que existan.
 - CI: nuevo job `database-tests` que carga `database/init/*.sql` en un postgres:16 y ejecuta `database/tests/pruebas_reglas.sql`; falla si una regla del esquema se rompe (#16).
 - Entorno (#2): el backend espera a que PostgreSQL esté listo (healthcheck en `docker-compose.yml`) y el README trae requisitos, pasos para Windows y Mac, pruebas, solución de problemas y checklist por integrante.
+- Modo Jefe Final (#9): `GET/POST /api/materias/{id}/jefes` y `GET/DELETE /api/jefes/{id}`; el HP sale de `v_estado_jefe`. En el temporizador se elige o crea el jefe y se muestra su barra de vida (`docs/jefes.md`).
 
 ### Cambiado
 

@@ -55,6 +55,8 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   const descansoTipo = ref(null) // 'corto' | 'largo'
   const error = ref('')
   const ocupado = ref(false)
+  const jefes = ref([]) // jefes de la materia elegida, con su HP (RF-12)
+  const jefeId = ref(null) // jefe al que van los pomodoros, o null
 
   const ahora = ref(reloj.ahora())
   const finMs = ref(0) // estudiando: cuándo termina el pomodoro
@@ -99,9 +101,37 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     }
   })
 
+  const jefe = computed(() => jefes.value.find((j) => j.id === jefeId.value) ?? null)
+
   const puedeIniciar = computed(
     () => fase.value === 'inactivo' && Number.isInteger(materiaId.value) && materiaId.value > 0,
   )
+
+  // ---------- Jefe Final (RF-12) ----------
+
+  /** Trae los jefes de la materia elegida. El HP lo calcula el servidor (v_estado_jefe). */
+  async function cargarJefes() {
+    if (!Number.isInteger(materiaId.value) || materiaId.value < 1) {
+      jefes.value = []
+      jefeId.value = null
+      return
+    }
+    try {
+      jefes.value = await api(`/api/materias/${materiaId.value}/jefes`)
+    } catch {
+      jefes.value = [] // materia inexistente o sin conexión
+    }
+    if (!jefes.value.some((j) => j.id === jefeId.value && !j.derrotado)) jefeId.value = null
+  }
+
+  async function crearJefe(datos) {
+    const ok = await ejecutar(async () => {
+      const nuevo = await api(`/api/materias/${materiaId.value}/jefes`, { metodo: 'POST', cuerpo: datos })
+      jefes.value = [...jefes.value, nuevo]
+      jefeId.value = nuevo.id
+    })
+    return ok
+  }
 
   // ---------- Reloj ----------
 
@@ -168,7 +198,9 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
       const s = await api('/api/sesiones/actual')
       if (s) {
         materiaId.value = s.materia_id
+        jefeId.value = s.jefe_id
         aplicarSesion(s)
+        await cargarJefes()
       } else if (fase.value === 'estudiando' || fase.value === 'pausado') {
         fase.value = 'inactivo'
         sesion.value = null
@@ -181,7 +213,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   async function iniciar() {
     if (!puedeIniciar.value) return
     const ok = await ejecutar(async () => {
-      const s = await api('/api/sesiones', { metodo: 'POST', cuerpo: { materia_id: materiaId.value } })
+      const s = await api('/api/sesiones', { metodo: 'POST', cuerpo: { materia_id: materiaId.value, jefe_id: jefeId.value } })
       aplicarSesion(s)
     })
     // 409: ya había una sesión en curso (otra pestaña): retomarla
@@ -231,6 +263,7 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
           finCelebracionMs.value = reloj.ahora() + MS_CELEBRACION
           // El XP cambió: se actualiza el nivel y la etapa de la mascota (si falla, se verán en la próxima carga)
           auth.cargarPerfil().catch(() => {})
+          await cargarJefes() // el pomodoro le quitó 1 HP al jefe
           return
         } catch (e) {
           // 409 = al servidor le faltan milisegundos por la latencia: se reintenta enseguida
@@ -281,6 +314,8 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     detenerReloj()
     volverAlInicio()
     materiaId.value = null
+    jefes.value = []
+    jefeId.value = null
     completados.value = 0 // la racha es de cada persona: no se hereda al cambiar de cuenta
     guardarCompletados(0)
   }
@@ -302,6 +337,9 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     descansoTipo,
     error,
     ocupado,
+    jefes,
+    jefeId,
+    jefe,
     restanteMs,
     progreso,
     puedeIniciar,
@@ -309,6 +347,8 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     arrancarReloj,
     detenerReloj,
     recuperar,
+    cargarJefes,
+    crearJefe,
     iniciar,
     pausar,
     reanudar,
