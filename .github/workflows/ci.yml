@@ -40,6 +40,33 @@ jobs:
       - run: pip install -r requirements.txt
       - run: pytest -v
 
+  database-tests:
+    runs-on: ubuntu-latest
+    # Issue #16: un cambio en el esquema que rompa una regla de la BD no se puede integrar
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pomopet
+          POSTGRES_PASSWORD: pomopet_ci
+          POSTGRES_DB: pomopet
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pomopet"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://pomopet:pomopet_ci@localhost:5432/pomopet
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cargar el esquema de la BD (database/init en orden)
+        run: for f in database/init/*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -f "$f"; done
+      - name: Probar las reglas del esquema
+        # pruebas_reglas.sql usa ON_ERROR_STOP: si una regla falla, psql sale con error y el job se pone rojo
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/pruebas_reglas.sql
+
   frontend-build:
     runs-on: ubuntu-latest
     defaults:

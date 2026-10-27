@@ -1,14 +1,17 @@
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 
 import { POMODOROS_PARA_DESCANSO_LARGO, formatear } from '../utils/temporizador.js'
 import { useAuthStore } from '../stores/auth.js'
+import { useMateriasStore } from '../stores/materias.js'
 import { usePomodoroStore } from '../stores/pomodoro.js'
 import JefeBarraVida from './JefeBarraVida.vue'
 import MascotaSprite from './MascotaSprite.vue'
 import TomatePixel from './TomatePixel.vue'
 
 const auth = useAuthStore()
+const materias = useMateriasStore()
 const pomodoro = usePomodoroStore()
 
 const TITULOS = {
@@ -32,23 +35,7 @@ const rondas = computed(() => Array.from({ length: POMODOROS_PARA_DESCANSO_LARGO
 const enSesion = computed(() => pomodoro.fase === 'estudiando' || pomodoro.fase === 'pausado')
 const porcentaje = computed(() => `${Math.round(Math.min(1, Math.max(0, pomodoro.progreso)) * 100)}%`)
 
-const materia = computed({
-  get: () => pomodoro.materiaId ?? '',
-  set: (valor) => {
-    pomodoro.materiaId = valor === '' ? null : Number(valor)
-  },
-})
-
-const creandoMateria = ref(false)
-const nuevaMateria = reactive({ nombre: '' })
-
-async function crearMateria() {
-  const ok = await pomodoro.crearMateria({ nombre: nuevaMateria.nombre })
-  if (ok) {
-    creandoMateria.value = false
-    nuevaMateria.nombre = ''
-  }
-}
+const materiaActual = computed(() => materias.buscar(pomodoro.materiaId))
 
 // Jefe Final (RF-12): se elige uno de la materia o se crea uno nuevo
 const jefesActivos = computed(() => pomodoro.jefes.filter((j) => !j.derrotado))
@@ -81,8 +68,11 @@ watch(() => pomodoro.materiaId, () => pomodoro.cargarJefes())
 
 onMounted(async () => {
   pomodoro.arrancarReloj()
-  await pomodoro.cargarMaterias()
-  await pomodoro.recuperar()
+  await Promise.all([pomodoro.recuperar(), materias.cargar()])
+  // Si no hay una sesión que retomar, se propone la primera materia (o ninguna si fue borrada)
+  if (pomodoro.fase === 'inactivo' && !materiaActual.value) {
+    pomodoro.materiaId = materias.lista[0]?.id ?? null
+  }
 })
 
 onUnmounted(() => {
@@ -126,6 +116,13 @@ watch(
         />
       </div>
       <p v-if="auth.perfil?.mascota?.nombre" class="escenario__nombre">{{ auth.perfil.mascota.nombre }}</p>
+      <p
+        v-if="pomodoro.fase !== 'inactivo' && materiaActual"
+        class="escenario__materia"
+        :style="{ '--color-materia': materiaActual.color }"
+      >
+        {{ materiaActual.nombre }}
+      </p>
       <div class="escenario__suelo" aria-hidden="true" />
     </div>
 
@@ -142,25 +139,20 @@ watch(
       <div class="barra__relleno" :style="{ width: porcentaje }" />
     </div>
 
-    <div v-if="pomodoro.fase === 'inactivo'" class="campo">
+    <div v-if="pomodoro.fase === 'inactivo' && materias.lista.length" class="campo">
       <label for="materia">Materia</label>
-      <select id="materia" v-model="materia">
-        <option value="">Elige una materia</option>
-        <option v-for="m in pomodoro.materias" :key="m.id" :value="m.id">{{ m.nombre }}</option>
-      </select>
-      <button v-if="!creandoMateria" type="button" class="btn btn--apagado" @click="creandoMateria = true">
-        + Nueva materia
-      </button>
-      <form v-else class="jefe-form" @submit.prevent="crearMateria">
-        <label for="materia-nombre">Nombre de la materia</label>
-        <input id="materia-nombre" v-model="nuevaMateria.nombre" type="text" maxlength="100" required />
-        <div class="acciones">
-          <button type="submit" class="btn btn--tomate" :disabled="pomodoro.ocupado">Crear materia</button>
-          <button type="button" class="btn btn--apagado" @click="creandoMateria = false">Cancelar</button>
-        </div>
-      </form>
+      <div class="selector">
+        <span class="selector__color" :style="{ background: materiaActual?.color }" aria-hidden="true" />
+        <select id="materia" v-model="pomodoro.materiaId">
+          <option v-for="m in materias.lista" :key="m.id" :value="m.id">{{ m.nombre }}</option>
+        </select>
+      </div>
+      <RouterLink :to="{ name: 'materias' }" class="enlace campo__enlace">Administrar materias</RouterLink>
     </div>
-
+    <div v-else-if="pomodoro.fase === 'inactivo' && materias.cargada" class="sin-materias">
+      <p>Todavía no tienes materias. Crea la primera para empezar a estudiar.</p>
+      <RouterLink :to="{ name: 'materias' }" class="btn btn--menta">+ Crear materia</RouterLink>
+    </div>
     <div v-if="pomodoro.fase === 'inactivo' && pomodoro.materiaId" class="campo">
       <label for="jefe">Jefe Final</label>
       <select id="jefe" v-model="jefeElegido">
@@ -187,6 +179,10 @@ watch(
     </div>
 
     <JefeBarraVida v-if="pomodoro.jefe" :jefe="pomodoro.jefe" />
+
+    <p v-if="materias.error && pomodoro.fase === 'inactivo'" class="aviso-error" role="alert">
+      {{ materias.error }}
+    </p>
 
     <div class="acciones">
       <button
@@ -378,11 +374,6 @@ watch(
     var(--acento);
 }
 
-/* ----- Controles ----- */
-.campo {
-  margin: 0 4px;
-}
-
 .campo select {
   width: 100%;
   padding: 0.5rem;
@@ -395,6 +386,68 @@ watch(
   display: grid;
   gap: 0.5rem;
   margin-top: 0.75rem;
+}
+
+.escenario__materia {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.75rem;
+  max-width: 45%;
+  margin: 0;
+  padding: 0.3rem 0.5rem;
+  overflow: hidden;
+  font-family: var(--fuente-pixel);
+  font-size: 0.55rem;
+  color: #fff;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: rgb(21 11 46 / 0.65);
+  border-left: 4px solid var(--color-materia);
+}
+
+/* ----- Controles ----- */
+.campo {
+  margin: 0 4px;
+}
+
+.selector {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.selector__color {
+  flex: none;
+  width: 1.4rem;
+  height: 1.4rem;
+  margin: 3px;
+  box-shadow: 0 0 0 3px var(--tinta);
+}
+
+.selector select {
+  flex: 1;
+  min-width: 0;
+}
+
+.campo__enlace {
+  justify-self: start;
+}
+
+.sin-materias {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  margin: 0 4px;
+  text-align: center;
+  color: var(--texto-suave);
+}
+
+.sin-materias p {
+  margin: 0;
+}
+
+.sin-materias .btn {
+  text-decoration: none;
 }
 
 .acciones {

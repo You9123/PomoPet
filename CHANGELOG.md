@@ -1,6 +1,6 @@
 # Bitácora de cambios
 
-## [Sprint 2] - en curso (entrega: Semana 13)
+## [Sprint 2] - 2026-10-21
 
 ### Agregado
 
@@ -16,12 +16,20 @@
 - Variantes de color de las mascotas: 5 por especie además del `clasico` (75 sprites), generadas con `npm run sprites:variantes`. El dibujo base también se genera por código (`npm run sprites:base`).
 - Selector de color de la mascota en el registro: tabla `variantes_mascota` y `mascotas.variante` (con llave foránea compuesta a la especie), `variante` en `POST /api/auth/registro`, colores en `GET /api/especies` y `variante` en `GET /api/me`. 2 reglas nuevas en `pruebas_reglas.sql` (20 en total).
 - API de materias (#4): `GET/POST /api/materias`, `GET/PATCH/DELETE /api/materias/{id}` con el progreso de cada una y tope de 20 por usuario validado en el backend además del trigger de la BD (`docs/materias.md`).
+- Pantalla de materias (#24): en `/materias` se crean, editan y borran las materias (con confirmación que avisa qué se pierde) y el temporizador usa un selector de materias en lugar del número escrito a mano. Menú para cambiar entre Pomodoro y Materias.
 - Pruebas de la lógica de gamificación (#7): bordes del XP (24:59 vs 25:00 con y sin pausas), tope de materias (20 sí, 21 no), daño al Jefe Final y progreso por materia (`backend/tests/test_gamificacion.py`). Niveles, rangos y etapas de evolución de la mascota quedan pendientes hasta que existan.
+- CI: nuevo job `database-tests` que carga `database/init/*.sql` en un postgres:16 y ejecuta `database/tests/pruebas_reglas.sql`; falla si una regla del esquema se rompe (#16).
+- Entorno (#2): el backend espera a que PostgreSQL esté listo (healthcheck en `docker-compose.yml`) y el README trae requisitos, pasos para Windows y Mac, pruebas, solución de problemas y checklist por integrante.
 - Modo Jefe Final (#9): `GET/POST /api/materias/{id}/jefes` y `GET/DELETE /api/jefes/{id}`; el HP sale de `v_estado_jefe`. En el temporizador se elige o crea el jefe y se muestra su barra de vida (`docs/jefes.md`).
 
 ### Cambiado
 
+- El nombre de materia repetido ignora también las tildes: "Calculo" choca con "Cálculo", pero la ñ sí cuenta (#26). Hay que recrear la BD local (`docker compose down -v`); para una BD con datos, como la de Render, está `database/migraciones/001_materias_nombre_sin_tildes.sql`.
 - Se reorganizaron los issues #3 a #12 para reflejar el nuevo modelo (mascota, pausas y datos calculados) y se creó el #16 (pruebas de la BD en el CI).
+
+### Corregido
+
+- `DELETE /api/materias/{id}` responde `409` si la materia tiene una sesión en curso, en lugar de borrarla sin avisar (el temporizador recibía un 404 al terminar). El XP de las materias usa `XP_POR_POMODORO` en vez de un 100 fijo.
 
 ### Notas
 

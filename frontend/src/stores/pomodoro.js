@@ -55,7 +55,6 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   const descansoTipo = ref(null) // 'corto' | 'largo'
   const error = ref('')
   const ocupado = ref(false)
-  const materias = ref([]) // materias del usuario (RF-02)
   const jefes = ref([]) // jefes de la materia elegida, con su HP (RF-12)
   const jefeId = ref(null) // jefe al que van los pomodoros, o null
 
@@ -107,25 +106,6 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   const puedeIniciar = computed(
     () => fase.value === 'inactivo' && Number.isInteger(materiaId.value) && materiaId.value > 0,
   )
-
-  // ---------- Materias (RF-02) ----------
-
-  async function cargarMaterias() {
-    if (!auth.autenticado) return
-    try {
-      materias.value = await api('/api/materias')
-    } catch {
-      materias.value = [] // sin conexión
-    }
-  }
-
-  async function crearMateria(datos) {
-    return ejecutar(async () => {
-      const nueva = await api('/api/materias', { metodo: 'POST', cuerpo: datos })
-      materias.value = [...materias.value, nueva]
-      materiaId.value = nueva.id
-    })
-  }
 
   // ---------- Jefe Final (RF-12) ----------
 
@@ -332,7 +312,6 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     detenerReloj()
     volverAlInicio()
     materiaId.value = null
-    materias.value = []
     jefes.value = []
     jefeId.value = null
     completados.value = 0 // la racha es de cada persona: no se hereda al cambiar de cuenta
@@ -356,7 +335,6 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     descansoTipo,
     error,
     ocupado,
-    materias,
     jefes,
     jefeId,
     jefe,
@@ -367,8 +345,6 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     arrancarReloj,
     detenerReloj,
     recuperar,
-    cargarMaterias,
-    crearMateria,
     cargarJefes,
     crearJefe,
     iniciar,

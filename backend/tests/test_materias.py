@@ -57,6 +57,20 @@ def test_nombre_repetido_da_409_sin_importar_mayusculas_ni_espacios(client):
     assert "nombre" in r.json()["detail"]
 
 
+def test_nombre_repetido_da_409_sin_importar_tildes(client):
+    headers = registrar(client)
+    assert crear(client, headers, nombre="Cálculo").status_code == 201
+    for nombre in ("Calculo", "calculó", "CALCULO"):
+        r = crear(client, headers, nombre=nombre)
+        assert r.status_code == 409, nombre
+
+
+def test_la_enie_no_cuenta_como_tilde(client):
+    headers = registrar(client)
+    assert crear(client, headers, nombre="Diseño").status_code == 201
+    assert crear(client, headers, nombre="Diseno").status_code == 201
+
+
 def test_dos_usuarios_pueden_tener_el_mismo_nombre(client):
     assert crear(client, registrar(client, "ana@una.ac.cr")).status_code == 201
     assert crear(client, registrar(client, "beto@una.ac.cr")).status_code == 201
@@ -176,10 +190,39 @@ def test_editar_materia_ajena_da_404(client):
 def test_borrar_materia_borra_sus_sesiones(client, conn):
     headers = registrar(client)
     materia_id = crear(client, headers).json()["id"]
-    conn.execute("INSERT INTO sesiones (materia_id) VALUES (%s)", (materia_id,))
+    conn.execute(
+        "INSERT INTO sesiones (materia_id, estado, inicio, fin) "
+        "VALUES (%s, 'completada', now() - interval '30 minutes', now())",
+        (materia_id,),
+    )
     assert client.delete(f"/api/materias/{materia_id}", headers=headers).status_code == 204
     assert client.get(f"/api/materias/{materia_id}", headers=headers).status_code == 404
     assert conn.execute("SELECT 1 FROM sesiones WHERE materia_id = %s", (materia_id,)).fetchone() is None
+
+
+def test_no_se_puede_borrar_una_materia_con_sesion_en_curso(client):
+    headers = registrar(client)
+    materia_id = crear(client, headers).json()["id"]
+    sesion_id = client.post("/api/sesiones", json={"materia_id": materia_id}, headers=headers).json()["id"]
+
+    r = client.delete(f"/api/materias/{materia_id}", headers=headers)
+    assert r.status_code == 409
+    assert "sesión en curso" in r.json()["detail"]
+    # La materia y su sesión siguen ahí
+    assert client.get(f"/api/materias/{materia_id}", headers=headers).status_code == 200
+    assert client.get("/api/sesiones/actual", headers=headers).json()["id"] == sesion_id
+
+    # Al cancelar la sesión, ya se puede borrar
+    assert client.post(f"/api/sesiones/{sesion_id}/cancelar", headers=headers).status_code == 200
+    assert client.delete(f"/api/materias/{materia_id}", headers=headers).status_code == 204
+
+
+def test_una_sesion_en_curso_de_otra_materia_no_impide_borrar(client):
+    headers = registrar(client)
+    con_sesion = crear(client, headers, nombre="Cálculo").json()["id"]
+    otra = crear(client, headers, nombre="Física").json()["id"]
+    client.post("/api/sesiones", json={"materia_id": con_sesion}, headers=headers)
+    assert client.delete(f"/api/materias/{otra}", headers=headers).status_code == 204
 
 
 def test_borrar_materia_ajena_da_404(client):

@@ -61,8 +61,9 @@ CREATE TABLE materias (
     horas_semanales SMALLINT CHECK (horas_semanales BETWEEN 0 AND 168),
     creado_en       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
--- Nombre único por usuario sin importar mayúsculas ni espacios 
-CREATE UNIQUE INDEX materias_nombre_unico ON materias (usuario_id, LOWER(trim(nombre)));
+-- Nombre único por usuario sin importar mayúsculas, espacios ni tildes ("Cálculo" = "calculo").
+-- Se usa translate() y no la extensión unaccent porque esta convierte la ñ en n ("Año" = "Ano").
+CREATE UNIQUE INDEX materias_nombre_unico ON materias (usuario_id, LOWER(translate(trim(nombre), 'áéíóúüÁÉÍÓÚÜ', 'aeiouuAEIOUU')));
 
 -- ---------- JEFES FINALES ----------
 

@@ -5,6 +5,7 @@ from psycopg import errors
 from pydantic import BaseModel, Field, field_validator
 
 from app.db import CONEXION
+from app.pomodoro import XP_POR_POMODORO
 from app.seguridad import usuario_actual
 
 router = APIRouter(prefix="/api", tags=["materias"])
@@ -59,7 +60,7 @@ class MateriaOut(BaseModel):
     pomodoros_completados: int
     pomodoros_cancelados: int
     minutos_estudiados: int
-    xp: int                      # 100 por pomodoro completado; se calcula, no se guarda (3FN)
+    xp: int                      # XP_POR_POMODORO por pomodoro completado; se calcula, no se guarda (3FN)
 
 
 # ---------- Utilidades ----------
@@ -74,7 +75,7 @@ SQL_MATERIA = """
 
 
 def a_respuesta(fila: dict) -> MateriaOut:
-    return MateriaOut(**fila, xp=100 * fila["pomodoros_completados"])
+    return MateriaOut(**fila, xp=XP_POR_POMODORO * fila["pomodoros_completados"])
 
 
 def cargar_materia(conn, materia_id: int, usuario_id: int) -> dict:
@@ -156,7 +157,23 @@ def editar_materia(
 
 @router.delete("/materias/{materia_id}", status_code=status.HTTP_204_NO_CONTENT)
 def borrar_materia(materia_id: int, usuario_id: int = Depends(usuario_actual), conn=CONEXION):
-    """Borra la materia con sus jefes, sesiones y pausas (ON DELETE CASCADE)."""
+    """Borra la materia con sus jefes, sesiones y pausas (ON DELETE CASCADE).
+
+    Si tiene una sesión en curso responde 409: el temporizador del frontend seguiría corriendo
+    sobre una sesión que ya no existe y al terminar recibiría 404.
+    """
+    # Mismo bloqueo que iniciar_sesion: nadie puede iniciar una sesión en esta materia mientras
+    # se revisa (sin esto, el INSERT de esa sesión fallaría con un 500 al borrarse la materia)
+    conn.execute("SELECT 1 FROM usuarios WHERE id = %s FOR UPDATE", (usuario_id,))
     cargar_materia(conn, materia_id, usuario_id)
+    conn.execute("SELECT 1 FROM materias WHERE id = %s FOR UPDATE", (materia_id,))
+    en_curso = conn.execute(
+        "SELECT 1 FROM sesiones WHERE materia_id = %s AND estado = 'en_curso'", (materia_id,)
+    ).fetchone()
+    if en_curso is not None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Tienes una sesión en curso en esta materia: termínala o cancélala antes de borrarla",
+        )
     conn.execute("DELETE FROM materias WHERE id = %s AND usuario_id = %s", (materia_id, usuario_id))
     return Response(status_code=status.HTTP_204_NO_CONTENT)

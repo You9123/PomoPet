@@ -230,6 +230,25 @@ BEGIN
     END IF;
     RAISE NOTICE 'OK 20. color por defecto: clasico';
 
+    -- ============= NOMBRE DE MATERIA Y TILDES =============
+
+    -- 21. Nombre repetido sin importar tildes (u2 ya tiene 'Cálculo')
+    BEGIN
+        INSERT INTO materias (usuario_id, nombre) VALUES (u2, 'CALCULO');
+        RAISE EXCEPTION 'FALLO: aceptó "CALCULO" teniendo "Cálculo"';
+    EXCEPTION WHEN unique_violation THEN
+        RAISE NOTICE 'OK 21. materia repetida sin tilde ("CALCULO") rechazada';
+    END;
+
+    -- 22. La ñ no es una tilde: "Año" y "Ano" son materias distintas
+    INSERT INTO materias (usuario_id, nombre) VALUES (u2, 'Año');
+    BEGIN
+        INSERT INTO materias (usuario_id, nombre) VALUES (u2, 'Ano');
+        RAISE NOTICE 'OK 22. "Año" y "Ano" son materias distintas';
+    EXCEPTION WHEN unique_violation THEN
+        RAISE EXCEPTION 'FALLO: trató "Ano" como repetida de "Año"';
+    END;
+
     RAISE NOTICE '=== Todas las pruebas pasaron ===';
 END;
 $$;
