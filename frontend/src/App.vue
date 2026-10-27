@@ -1,10 +1,12 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 
+import { useAudioStore } from './stores/audio.js'
 import { useAuthStore } from './stores/auth.js'
 import { usePomodoroStore } from './stores/pomodoro.js'
 
+const audio = useAudioStore()
 const auth = useAuthStore()
 const pomodoro = usePomodoroStore()
 const router = useRouter()
@@ -19,6 +21,14 @@ onMounted(async () => {
     }
   }
 })
+
+// Al cerrar sesión (con el botón o porque venció el token) se apaga el sonido ambiental
+watch(
+  () => auth.autenticado,
+  (autenticado) => {
+    if (!autenticado) audio.detener()
+  },
+)
 
 function salir() {
   pomodoro.reiniciarTodo()
