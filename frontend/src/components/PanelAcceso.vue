@@ -70,6 +70,7 @@ async function enviar() {
           <MascotaSprite
             :especie="e.codigo"
             :variante="especieId === e.id ? variante : 'clasico'"
+            etapa="cria"
             estado="inactivo"
             :nombre="e.nombre"
             :tamano="64"

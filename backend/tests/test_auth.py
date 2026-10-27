@@ -53,6 +53,9 @@ def test_registro_valido_crea_usuario_y_mascota(client):
         "especie_nombre": "Gato",
         "variante": "clasico",           # sin elegir color: el clásico
         "variante_nombre": "Clásico",
+        "xp_total": 0,                   # RF-04: recién registrada
+        "nivel": 1,
+        "etapa": {"codigo": "cria", "nombre": "Cría"},
     }
 
 

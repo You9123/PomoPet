@@ -80,12 +80,18 @@ watch(
         <MascotaSprite
           :especie="auth.especieCodigo ?? 'gato'"
           :variante="auth.varianteCodigo"
+          :etapa="auth.etapaCodigo"
           :estado="pomodoro.fase"
           :nombre="auth.perfil?.mascota?.nombre ?? 'Tu mascota'"
           :tamano="192"
         />
       </div>
-      <p v-if="auth.perfil?.mascota?.nombre" class="escenario__nombre">{{ auth.perfil.mascota.nombre }}</p>
+      <p v-if="auth.perfil?.mascota?.nombre" class="escenario__nombre">
+        {{ auth.perfil.mascota.nombre }}
+        <span v-if="auth.perfil.mascota.etapa" class="escenario__etapa">
+          {{ auth.perfil.mascota.etapa.nombre }} · Nv {{ auth.perfil.mascota.nivel }}
+        </span>
+      </p>
       <p
         v-if="pomodoro.fase !== 'inactivo' && materiaActual"
         class="escenario__materia"
@@ -275,6 +281,13 @@ watch(
   font-size: 0.6rem;
   color: #fff;
   background: rgb(21 11 46 / 0.65);
+}
+
+.escenario__etapa {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.5rem;
+  color: var(--oro);
 }
 
 .escenario__suelo {
