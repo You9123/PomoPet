@@ -32,6 +32,7 @@ class JefeOut(BaseModel):
     hp_total: int
     hp_actual: int               # se calcula en v_estado_jefe, no se guarda (3FN)
     pomodoros_recibidos: int
+    dano_quiz: int               # HP extra que le quitaron los quizzes con 4 o más aciertos (RF-16)
     derrotado: bool
     fecha_limite: date | None
 
@@ -40,7 +41,7 @@ class JefeOut(BaseModel):
 
 SQL_JEFE = """
     SELECT e.jefe_id AS id, e.materia_id, e.nombre, e.hp_total, e.hp_actual,
-           e.pomodoros_recibidos, e.derrotado, e.fecha_limite
+           e.pomodoros_recibidos, e.dano_quiz, e.derrotado, e.fecha_limite
     FROM v_estado_jefe e
     JOIN materias m ON m.id = e.materia_id
     WHERE m.usuario_id = %s

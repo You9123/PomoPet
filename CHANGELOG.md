@@ -9,6 +9,7 @@ Requisito agregado por el profesor después de cerrar el Release Final.
 - Requerimientos nuevos en el documento de alcance (#44): RF-14 (coach de la mascota), RF-15 (quiz con IA), RF-16 (daño extra al Jefe) y RNF-10 (la IA solo desde el backend).
 - Tablas del coach y del quiz (#38): `consejos_ia`, `quizzes` (uno por sesión, aciertos de 0 a 5) y `quiz_preguntas` (4 opciones y el índice de la correcta). Los apuntes no se guardan. Pruebas 24 a 27 en `pruebas_reglas.sql` y migración `003_ia_consejos_quiz.sql` para la BD de producción.
 - API del coach (#39, RF-14): `GET` y `POST /api/coach/consejo`. La mascota da un consejo animador a partir de las estadísticas del panel (sin correo ni datos de la cuenta), con un máximo de 3 por día (`429`) y un consejo de respaldo que no gasta cupo si la IA falla (`docs/ia.md`). Pruebas en `backend/tests/test_coach.py`; `pytest` usa siempre `IA_PROVEEDOR=falso`.
+- API del quiz contra el Jefe Final (#40, RF-15, RF-16): `POST` y `GET /api/sesiones/{id}/quiz` y `POST /api/sesiones/{id}/quiz/respuestas`. La IA crea 5 preguntas con los apuntes (que no se guardan), se valida la respuesta y se reintenta una vez (`503` si sigue fallando, sin crear el quiz). La respuesta correcta solo sale al corregir; con 4 o más aciertos el Jefe pierde 1 HP extra y no se da XP. `JefeOut` agrega `dano_quiz`. Pruebas en `backend/tests/test_quiz.py`.
 
 ### Cambiado
 
