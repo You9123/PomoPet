@@ -53,6 +53,33 @@ cd frontend && npm test                    # frontend
 Las reglas del esquema (`database/tests/pruebas_reglas.sql`) se explican en `docs/modelo-datos.md`;
 el CI también las ejecuta en cada PR.
 
+### Pruebas de integración (las tres capas juntas)
+
+Usan [Playwright](https://playwright.dev): abre un Chrome real y recorre la app como una persona.
+Vue llama a FastAPI y FastAPI guarda en PostgreSQL; nada es falso. Están en `frontend/e2e/`:
+
+| Prueba | Qué recorre |
+| --- | --- |
+| `flujo-completo.spec.js` | Registro con mascota → crear materia → pomodoro con una pausa → 100 XP en **Progreso** y en **Materias** |
+| `cancelar.spec.js` | Iniciar y cancelar una sesión → aparece en el historial como cancelada y sin XP |
+
+Con `docker compose up` corriendo, en otra terminal:
+
+```bash
+cd frontend
+npx playwright install chromium   # solo la primera vez: descarga el navegador
+npm run test:e2e                  # levanta Vite solo si no está corriendo
+```
+
+- **Para no esperar 25 minutos**, la prueba "viaja en el tiempo": mueve en la BD la hora de inicio de
+  la sesión 26 minutos hacia atrás (lo mismo que `retrasar_inicio` en las pruebas del backend). El
+  backend sigue validando los 25 minutos efectivos igual que siempre; el código de la app no cambia.
+- Cada prueba crea su propio usuario (`e2e-…@pomopet.test`) y lo borra al terminar: tus datos no se tocan.
+- Para ver el navegador mientras corre: `npm run test:e2e -- --headed`. Para ir paso a paso: `-- --ui`.
+- Si una prueba falla, Playwright guarda una captura y la traza en `frontend/test-results/`
+  (abrirla con `npx playwright show-trace <archivo .zip>`).
+- El CI las corre en cada PR (job `integration-tests`), con `docker compose` como aquí.
+
 ### Si cambia el esquema de la BD
 
 PostgreSQL solo carga `database/init/` cuando el volumen está vacío. Después de un `git pull` que
@@ -80,6 +107,7 @@ docker compose up --build
 - [ ] `http://localhost:5173` abre y se puede crear una cuenta
 - [ ] `docker compose exec backend pytest -v` pasa
 - [ ] `cd frontend && npm test` pasa
+- [ ] `cd frontend && npm run test:e2e` pasa (con `docker compose up` corriendo)
 
 ## Equipo
 
