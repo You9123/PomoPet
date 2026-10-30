@@ -6,6 +6,7 @@ import { POMODOROS_PARA_DESCANSO_LARGO, formatear } from '../utils/temporizador.
 import { useAuthStore } from '../stores/auth.js'
 import { useMateriasStore } from '../stores/materias.js'
 import { usePomodoroStore } from '../stores/pomodoro.js'
+import ConsejoMascota from './ConsejoMascota.vue'
 import JefeBarraVida from './JefeBarraVida.vue'
 import MascotaSprite from './MascotaSprite.vue'
 import TomatePixel from './TomatePixel.vue'
@@ -131,6 +132,9 @@ watch(
       </p>
       <div class="escenario__suelo" aria-hidden="true" />
     </div>
+
+    <!-- Durante un pomodoro no se interrumpe: el consejo vuelve al terminar -->
+    <ConsejoMascota v-if="!enSesion" />
 
     <p class="tiempo" role="timer" :aria-label="`Tiempo restante ${tiempo}`">{{ tiempo }}</p>
 
