@@ -75,6 +75,36 @@ Los dos responden lo mismo:
 - **La respuesta** se deja en una sola línea, sin comillas alrededor y en un máximo de 280 caracteres (se corta en un
   espacio y termina en «…»).
 
+## Quiz contra el Jefe Final (RF-15, RF-16, issue #40)
+
+Código en `backend/app/routers/quiz.py`; pruebas en `backend/tests/test_quiz.py`. Todos exigen token.
+
+| Método | Ruta                                  | Qué hace                                             | Errores |
+| ------ | ------------------------------------- | ---------------------------------------------------- | ------- |
+| POST   | `/api/sesiones/{id}/quiz`             | Crea el quiz con `{"apuntes": "..."}` → `201`        | `404`, `409`, `422`, `503` |
+| GET    | `/api/sesiones/{id}/quiz`             | El quiz, para retomarlo al recargar                  | `404` sesión ajena o sin quiz |
+| POST   | `/api/sesiones/{id}/quiz/respuestas`  | Corrige `{"respuestas": [0, 1, 2, 3, 0]}` una vez    | `404`, `409`, `422` |
+
+Crear y ver responden `{ "preguntas": [{ "enunciado": "...", "opciones": ["", "", "", ""] }], "respondido": false }`.
+Corregir responde `{ "aciertos": 4, "correctas": [0, 1, 2, 0, 0], "dano_extra": true, "jefe": { ... } }`, con el jefe
+ya actualizado (ver `jefes.md`).
+
+- **Cuándo se puede:** una vez por cada sesión `completada` contra un Jefe que no esté derrotado. Si no, `409`:
+  sesión en curso o cancelada, sin Jefe, Jefe derrotado, o ya tiene quiz. Corregir un quiz ya respondido también
+  da `409`. Una sesión ajena o inexistente da `404`.
+- **Apuntes:** entre 200 y 8000 caracteres sin contar los espacios de los bordes (si no, `422`). Solo se envían a
+  la IA: **no se guardan** en la BD ni se escriben en ningún log.
+- **La respuesta correcta nunca viaja al cliente antes de corregir:** crear y ver devuelven solo el enunciado y
+  las opciones. Las correctas quedan en `quiz_preguntas` y salen únicamente en la respuesta de corregir.
+- **Validación:** `QuizGenerado` exige 5 preguntas, 4 opciones y un índice correcto de 0 a 3; además se rechazan
+  enunciados u opciones vacías y opciones repetidas. Si la respuesta falla o no sirve, se **reintenta una vez**.
+  Si sigue fallando, `503` y **no se crea el quiz**, así que se puede volver a pedir con los mismos apuntes.
+- **Apuntes como datos:** van entre `<apuntes>` y `</apuntes>`, y una etiqueta `</apuntes>` escrita dentro se
+  quita para que no cierre el bloque. El prompt le dice a la IA que ignore cualquier instrucción de los apuntes.
+- **Daño extra:** con **4 o más aciertos** el Jefe pierde 1 HP extra (`dano_extra: true`). No se guarda: lo calcula
+  la vista `v_estado_jefe` con la columna `dano_quiz`. **El quiz no da XP.**
+- En modo falso el quiz siempre es el mismo y la correcta es la opción 0: `[0, 0, 0, 0, 1]` da 4 aciertos.
+
 ## Privacidad
 
 - Al proveedor solo se envía lo necesario: estadísticas y nombres de materias, o los apuntes del quiz. Nunca el correo
