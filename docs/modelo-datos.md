@@ -118,6 +118,7 @@ en una tabla. Así existe una sola fuente de verdad y no hay datos que se desinc
 | -------------------------------- | --------------------------------------------------------------- |
 | Pomodoros y minutos por materia  | Vista `v_progreso_materia` (resta el tiempo en `pausas`)        |
 | HP actual y "derrotado" del Jefe | Vista `v_estado_jefe` (`hp_total` − pomodoros completados)      |
+| Tiempo efectivo de cada sesión   | Vista `v_historial_sesiones` (fin − inicio − pausas) — RF-08    |
 | XP por materia (100 × pomodoro)  | Backend (Python), con `pomodoros_completados` — RF-03           |
 | Rango de dominio                 | Backend (Python), a partir del XP — RF-04                       |
 | Etapa de evolución de la mascota | Backend (Python), a partir del XP total del usuario             |
@@ -126,6 +127,7 @@ en una tabla. Así existe una sola fuente de verdad y no hay datos que se desinc
 ```sql
 SELECT * FROM v_progreso_materia WHERE usuario_id = 1;
 SELECT * FROM v_estado_jefe      WHERE materia_id = 3;
+SELECT * FROM v_historial_sesiones WHERE usuario_id = 1 ORDER BY inicio DESC;
 ```
 
 **Desnormalización aceptada:** `sesiones` guarda `materia_id` y también `jefe_id`, aunque el

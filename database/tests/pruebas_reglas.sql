@@ -198,6 +198,7 @@ BEGIN
     END IF;
     RAISE NOTICE 'OK 17. progreso: 25 min estudiados (se restó la pausa)';
 
+
     -- ====================== LOGROS ======================
 
     -- 18. Un logro no se puede obtener dos veces
@@ -248,6 +249,27 @@ BEGIN
     EXCEPTION WHEN unique_violation THEN
         RAISE EXCEPTION 'FALLO: trató "Ano" como repetida de "Año"';
     END;
+
+    -- ================ HISTORIAL (issue #11) ================
+
+    -- 23. Historial: resta la pausa, incluye canceladas y deja fuera la sesión en curso
+    INSERT INTO sesiones (materia_id) VALUES (m3);   -- en curso: no debe aparecer
+    IF (SELECT count(*) FROM v_historial_sesiones WHERE materia_id = m3) <> 2 THEN
+        RAISE EXCEPTION 'FALLO: el historial no tiene exactamente las 2 sesiones terminadas';
+    END IF;
+    PERFORM 1 FROM v_historial_sesiones
+    WHERE sesion_id = s1 AND usuario_id = u2 AND pausado = interval '5 minutes'
+      AND efectivo = interval '25 minutes';
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'FALLO: el historial no restó los 5 min de pausa';
+    END IF;
+    PERFORM 1 FROM v_historial_sesiones
+    WHERE materia_id = m3 AND estado = 'cancelada' AND efectivo = interval '10 minutes';
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'FALLO: el historial no incluye la cancelada con sus 10 min';
+    END IF;
+    DELETE FROM sesiones WHERE materia_id = m3 AND estado = 'en_curso';
+    RAISE NOTICE 'OK 23. historial: resta pausas, incluye canceladas, sin la sesión en curso';
 
     RAISE NOTICE '=== Todas las pruebas pasaron ===';
 END;
