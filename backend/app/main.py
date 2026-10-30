@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import ORIGENES_CORS
-from app.routers import auth, estadisticas, jefes, materias, sesiones
+from app.routers import auth, coach, estadisticas, jefes, materias, sesiones
 
 app = FastAPI(title="PomoPet API", version="0.1.0")
 
@@ -26,3 +26,4 @@ app.include_router(materias.router)
 app.include_router(jefes.router)
 app.include_router(sesiones.router)
 app.include_router(estadisticas.router)
+app.include_router(coach.router)

@@ -3,6 +3,8 @@ import os
 # Si se corre pytest fuera de Docker y sin .env, usar un secreto de prueba
 # (tiene que ir ANTES de importar app, porque config.py lo valida al importarse)
 os.environ.setdefault("JWT_SECRET", "secreto-de-prueba-solo-para-pytest-local")
+# Las pruebas nunca salen a internet ni gastan cupo de la IA: el proveedor falso responde siempre lo mismo
+os.environ.setdefault("IA_PROVEEDOR", "falso")
 
 import psycopg
 import pytest
