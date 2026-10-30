@@ -130,6 +130,43 @@ CREATE TABLE logros_usuario (
     PRIMARY KEY (usuario_id, logro_id)
 );
 
+-- ---------- INTELIGENCIA ARTIFICIAL (issue #38) ----------
+
+-- Consejos de la mascota (RF-14). Se guardan para mostrar el último y contar el tope de 3 por día.
+CREATE TABLE consejos_ia (
+    id         SERIAL PRIMARY KEY,
+    usuario_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    texto      TEXT NOT NULL CHECK (length(trim(texto)) > 0),
+    creado_en  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX consejos_ia_usuario_idx ON consejos_ia (usuario_id, creado_en);
+
+-- Quiz contra el Jefe Final (RF-15): uno por sesión. Los apuntes del estudiante NO se guardan.
+-- Que la sesión esté completada y tenga un jefe vivo lo valida el backend al crearlo.
+CREATE TABLE quizzes (
+    id            SERIAL PRIMARY KEY,
+    sesion_id     INT NOT NULL UNIQUE REFERENCES sesiones(id) ON DELETE CASCADE,
+    creado_en     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    respondido_en TIMESTAMPTZ,                  -- NULL = todavía sin responder
+    aciertos      SMALLINT CHECK (aciertos BETWEEN 0 AND 5),
+    -- respondido <=> tiene aciertos
+    CHECK ((respondido_en IS NULL) = (aciertos IS NULL)),
+    CHECK (respondido_en IS NULL OR respondido_en >= creado_en)
+);
+
+-- Las 5 preguntas de cada quiz. `orden` y `correcta` son índices desde 0, igual que en la API.
+CREATE TABLE quiz_preguntas (
+    quiz_id   INT      NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+    orden     SMALLINT NOT NULL CHECK (orden BETWEEN 0 AND 4),
+    enunciado TEXT     NOT NULL CHECK (length(trim(enunciado)) > 0),
+    opcion_0  TEXT     NOT NULL,
+    opcion_1  TEXT     NOT NULL,
+    opcion_2  TEXT     NOT NULL,
+    opcion_3  TEXT     NOT NULL,
+    correcta  SMALLINT NOT NULL CHECK (correcta BETWEEN 0 AND 3),
+    PRIMARY KEY (quiz_id, orden)
+);
+
 -- ---------- TRIGGER ----------
 -- ---------- RF-02: tope de 20 materias por usuario ----------
 
@@ -172,18 +209,23 @@ LEFT JOIN LATERAL (
 ) p ON true
 GROUP BY m.id;
 
--- Estado del Jefe Final (RF-06, RF-12): cada pomodoro completado le quita 1 HP
+-- Estado del Jefe Final (RF-06, RF-12): cada pomodoro completado le quita 1 HP, y cada quiz
+-- respondido con 4 o más aciertos le quita 1 HP extra (RF-16).
+-- Como quizzes.sesion_id es UNIQUE, unir los quizzes no repite sesiones: COUNT(s.id) no cambia.
+-- dano_quiz va de última porque CREATE OR REPLACE VIEW solo admite columnas nuevas al final.
 CREATE VIEW v_estado_jefe AS
 SELECT j.id AS jefe_id,
        j.materia_id,
        j.nombre,
        j.hp_total,
        j.fecha_limite,
-       COUNT(s.id)::INT                          AS pomodoros_recibidos,
-       GREATEST(j.hp_total - COUNT(s.id), 0)::INT AS hp_actual,
-       COUNT(s.id) >= j.hp_total                  AS derrotado
+       COUNT(s.id)::INT                                       AS pomodoros_recibidos,
+       GREATEST(j.hp_total - COUNT(s.id) - COUNT(q.id), 0)::INT AS hp_actual,
+       COUNT(s.id) + COUNT(q.id) >= j.hp_total                 AS derrotado,
+       COUNT(q.id)::INT                                       AS dano_quiz
 FROM jefes_finales j
 LEFT JOIN sesiones s ON s.jefe_id = j.id AND s.estado = 'completada'
+LEFT JOIN quizzes q  ON q.sesion_id = s.id AND q.aciertos >= 4
 GROUP BY j.id;
 
 -- Historial de sesiones terminadas (RF-08, issue #11): una fila por sesión completada o cancelada,
