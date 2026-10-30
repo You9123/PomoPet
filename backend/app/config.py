@@ -15,6 +15,12 @@ if len(JWT_SECRET) < 32 or JWT_SECRET == "cambia_esto_por_un_texto_largo_y_aleat
     
 JWT_HORAS = int(os.environ.get("JWT_HORAS") or 24)
 
+# IA (RNF-10, docs/ia.md). A diferencia de JWT_SECRET, sin clave el backend arranca igual:
+# solo dejan de estar disponibles las funciones de IA. IA_PROVEEDOR=falso responde sin salir a internet.
+IA_PROVEEDOR = os.environ.get("IA_PROVEEDOR") or "gemini"
+IA_API_KEY = os.environ.get("IA_API_KEY") or ""
+IA_MODELO = os.environ.get("IA_MODELO") or "gemini-3.5-flash-lite"
+
 
 # Orígenes (URL del frontend) que pueden llamar a la API desde el navegador (CORS).
 # El frontend local (Vite) siempre está permitido. En producción se agrega el dominio

@@ -24,6 +24,9 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en el .env (ver .env.example)}
+      IA_PROVEEDOR: ${IA_PROVEEDOR:-falso}
+      IA_API_KEY: ${IA_API_KEY:-}
+      IA_MODELO: ${IA_MODELO:-}
     ports:
       - "8000:8000"
     volumes:
