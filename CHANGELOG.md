@@ -13,6 +13,8 @@
 - Pruebas de los bordes de cada umbral en `backend/tests/test_niveles.py`.
 - Reproductor de audio ambiental (#10, RF-07): en la pantalla Pomodoro se elige lluvia, Lo-Fi o ruido blanco, con reproducir, pausar y volumen; la pista y el volumen se recuerdan en el navegador. Las pistas se generan por código (`npm run audio`), son obra propia y se publican como CC0 (`docs/audio.md`).
 
+- Pruebas de integración entre las tres capas (#12): Playwright recorre la app en un Chrome real contra el backend y la BD de `docker compose`. `frontend/e2e/flujo-completo.spec.js` (registro con mascota → materia → pomodoro con pausa → XP en estadísticas) y `frontend/e2e/cancelar.spec.js` (sesión cancelada sin XP). Se corren con `npm run test:e2e` y en el CI (job `integration-tests`). Ver el README.
+
 ### Notas
 
 - El esquema agrega la vista `v_historial_sesiones` (#11): recrear la BD local con `docker compose down -v` y `docker compose up --build`. En Render, correr `database/migraciones/002_vista_historial_sesiones.sql`.
