@@ -79,6 +79,9 @@ jobs:
           POSTGRES_PASSWORD=pomopet_ci
           POSTGRES_DB=pomopet
           JWT_SECRET=secreto-solo-para-el-ci-de-github-actions
+          # Issue #43: el coach y el quiz usan la IA falsa, sin clave real ni internet
+          IA_PROVEEDOR=falso
+          IA_API_KEY=
           EOF
       - name: Levantar la BD y el backend
         run: docker compose up -d --build --wait
