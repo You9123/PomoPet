@@ -1,7 +1,7 @@
 // Pasos que comparten las pruebas de integración. Cada uno hace lo mismo que haría una persona en la app.
 import { expect, test as base } from '@playwright/test'
 
-import { borrarUsuario } from './bd.js'
+import { adelantarReloj, borrarUsuario } from './bd.js'
 
 export const PASSWORD = 'pomopet123'
 
@@ -63,6 +63,30 @@ export async function iniciarPomodoro(page, materia) {
   await page.getByLabel('Materia', { exact: true }).selectOption({ label: materia })
   await page.getByRole('button', { name: '▶ Iniciar' }).click()
   await expect(page.getByRole('heading', { name: 'Estudiando' })).toBeVisible()
+}
+
+/** Crea un Jefe Final para la materia elegida en el temporizador; queda seleccionado. */
+export async function crearJefe(page, nombre, hp) {
+  await page.getByRole('button', { name: '+ Nuevo jefe' }).click()
+  await page.getByLabel('Nombre', { exact: true }).fill(nombre)
+  await page.getByLabel('HP (pomodoros)').fill(String(hp))
+  await page.getByRole('button', { name: 'Crear jefe' }).click()
+  await expect(barraDelJefe(page)).toContainText(`${hp} / ${hp} HP`)
+}
+
+/** La barra de vida del jefe (la del temporizador, o la del resultado del quiz). */
+export function barraDelJefe(page) {
+  return page.locator('.jefe')
+}
+
+/**
+ * Termina el pomodoro en curso con el "viaje en el tiempo" (como en flujo-completo.spec.js):
+ * la sesión empezó hace 26 minutos y, al recargar, el frontend la finaliza en el servidor.
+ */
+export async function completarPomodoro(page, correo) {
+  await adelantarReloj(correo, 26)
+  await page.reload()
+  await expect(page.getByRole('heading', { name: '¡Lo lograste! +100 XP' })).toBeVisible()
 }
 
 /** Una tarjeta del resumen de la pantalla Progreso ("XP total", "Completados"...). */

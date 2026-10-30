@@ -10,12 +10,17 @@ Requisito agregado por el profesor después de cerrar el Release Final.
 - Tablas del coach y del quiz (#38): `consejos_ia`, `quizzes` (uno por sesión, aciertos de 0 a 5) y `quiz_preguntas` (4 opciones y el índice de la correcta). Los apuntes no se guardan. Pruebas 24 a 27 en `pruebas_reglas.sql` y migración `003_ia_consejos_quiz.sql` para la BD de producción.
 - API del coach (#39, RF-14): `GET` y `POST /api/coach/consejo`. La mascota da un consejo animador a partir de las estadísticas del panel (sin correo ni datos de la cuenta), con un máximo de 3 por día (`429`) y un consejo de respaldo que no gasta cupo si la IA falla (`docs/ia.md`). Pruebas en `backend/tests/test_coach.py`; `pytest` usa siempre `IA_PROVEEDOR=falso`.
 - API del quiz contra el Jefe Final (#40, RF-15, RF-16): `POST` y `GET /api/sesiones/{id}/quiz` y `POST /api/sesiones/{id}/quiz/respuestas`. La IA crea 5 preguntas con los apuntes (que no se guardan), se valida la respuesta y se reintenta una vez (`503` si sigue fallando, sin crear el quiz). La respuesta correcta solo sale al corregir; con 4 o más aciertos el Jefe pierde 1 HP extra y no se da XP. `JefeOut` agrega `dano_quiz`. Pruebas en `backend/tests/test_quiz.py`.
+- Pruebas E2E del coach y del quiz (#43): `frontend/e2e/coach.spec.js` (pedir un consejo, verlo en el globo y que el contador baje de 3 a 0) y `frontend/e2e/quiz.spec.js` (con 4 aciertos el jefe pierde 1 HP extra y el XP sigue en 100; con 3 no hay daño extra). El job `integration-tests` usa `IA_PROVEEDOR=falso` sin clave. El README explica cómo correrlas y cómo probar a mano con la IA real.
 
 ### Cambiado
 
 - RF-06 y RF-12 admiten el daño extra del quiz; antes el HP bajaba solo con pomodoros.
 - `v_estado_jefe` resta 1 HP por cada quiz con 4 o más aciertos y agrega la columna `dano_quiz` al final; `pomodoros_recibidos` no cambia (#38).
 - El cálculo de las estadísticas pasa a `calcular_estadisticas()` para que el coach use las mismas consultas (#39). `GET /api/estadisticas` responde igual.
+
+### Corregido
+
+- En **Materias**, el nombre que se escribía mientras cargaba la lista se borraba al terminar la carga (#43). Ahora solo se propone el color.
 
 ### Notas
 
