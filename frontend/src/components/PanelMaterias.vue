@@ -33,7 +33,8 @@ function formularioVacio() {
 onMounted(async () => {
   materias.limpiarError()
   await Promise.all([materias.cargar(), pomodoro.recuperar()])
-  formularioVacio()
+  // Con la lista ya cargada se propone un color que no esté en uso, sin borrar lo que se haya escrito mientras cargaba
+  if (!editando.value && !nombre.value) color.value = sugerirColor(materias.lista)
 })
 
 async function guardar() {
