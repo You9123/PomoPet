@@ -185,3 +185,28 @@ SELECT j.id AS jefe_id,
 FROM jefes_finales j
 LEFT JOIN sesiones s ON s.jefe_id = j.id AND s.estado = 'completada'
 GROUP BY j.id;
+
+-- Historial de sesiones terminadas (RF-08, issue #11): una fila por sesión completada o cancelada,
+-- con el tiempo en pausa y el tiempo efectivo (fin - inicio - pausas). Las sesiones en curso no
+-- aparecen: su tiempo todavía cambia. El XP no se guarda: lo calcula el backend.
+CREATE VIEW v_historial_sesiones AS
+SELECT s.id AS sesion_id,
+       m.usuario_id,
+       s.materia_id,
+       s.jefe_id,
+       s.estado,
+       s.inicio,
+       s.fin,
+       COALESCE(p.pausado, interval '0') AS pausado,
+       GREATEST(s.fin - s.inicio - COALESCE(p.pausado, interval '0'), interval '0') AS efectivo
+FROM sesiones s
+JOIN materias m ON m.id = s.materia_id
+LEFT JOIN LATERAL (
+    SELECT SUM(pa.fin - pa.inicio) AS pausado
+    FROM pausas pa
+    WHERE pa.sesion_id = s.id
+) p ON true
+WHERE s.estado <> 'en_curso';
+
+-- El historial y las estadísticas filtran las sesiones de un usuario por fecha de inicio
+CREATE INDEX sesiones_materia_inicio_idx ON sesiones (materia_id, inicio);

@@ -38,6 +38,7 @@ function salir() {
   <nav v-if="auth.autenticado" class="menu" aria-label="Secciones">
     <RouterLink :to="{ name: 'home' }" class="menu__enlace">Pomodoro</RouterLink>
     <RouterLink :to="{ name: 'materias' }" class="menu__enlace">Materias</RouterLink>
+    <RouterLink :to="{ name: 'estadisticas' }" class="menu__enlace">Progreso</RouterLink>
   </nav>
 
   <RouterView />
@@ -72,17 +73,17 @@ function salir() {
 
 .menu {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.75rem;
   margin: 0 4px 1.5rem;
 }
 
 .menu__enlace {
-  padding: 0.7rem 0.5rem;
+  padding: 0.7rem 0.25rem;
   margin: 3px;
   text-align: center;
   font-family: var(--fuente-pixel);
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   color: var(--texto-suave);
   text-decoration: none;
   background: var(--tinta);
