@@ -7,10 +7,16 @@ Requisito agregado por el profesor después de cerrar el Release Final.
 ### Agregado
 
 - Requerimientos nuevos en el documento de alcance (#44): RF-14 (coach de la mascota), RF-15 (quiz con IA), RF-16 (daño extra al Jefe) y RNF-10 (la IA solo desde el backend).
+- Tablas del coach y del quiz (#38): `consejos_ia`, `quizzes` (uno por sesión, aciertos de 0 a 5) y `quiz_preguntas` (4 opciones y el índice de la correcta). Los apuntes no se guardan. Pruebas 24 a 27 en `pruebas_reglas.sql` y migración `003_ia_consejos_quiz.sql` para la BD de producción.
 
 ### Cambiado
 
 - RF-06 y RF-12 admiten el daño extra del quiz; antes el HP bajaba solo con pomodoros.
+- `v_estado_jefe` resta 1 HP por cada quiz con 4 o más aciertos y agrega la columna `dano_quiz` al final; `pomodoros_recibidos` no cambia (#38).
+
+### Notas
+
+- El esquema agrega las tablas del coach y del quiz (#38): recrear la BD local con `docker compose down -v` y `docker compose up --build`. En producción, correr `database/migraciones/003_ia_consejos_quiz.sql` antes de desplegar el backend.
 
 ## [Release Final] - 2026-10-30
 

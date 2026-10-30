@@ -14,6 +14,7 @@ DECLARE
     s1 INT;                  -- sesión
     gato INT;                -- especie
     u3 INT;                  -- usuario sin mascota (prueba 19 y 20)
+    j2 INT; s2 INT; q1 INT;  -- jefe, sesión y quiz del daño extra (pruebas 24 a 27)
     v_int INT; v_bool BOOLEAN;
 BEGIN
     INSERT INTO usuarios (correo, password_hash) VALUES ('ana@una.ac.cr',  'hash') RETURNING id INTO u1;
@@ -270,6 +271,72 @@ BEGIN
     END IF;
     DELETE FROM sesiones WHERE materia_id = m3 AND estado = 'en_curso';
     RAISE NOTICE 'OK 23. historial: resta pausas, incluye canceladas, sin la sesión en curso';
+
+    -- ============= QUIZ CONTRA EL JEFE (issue #38) =============
+
+    INSERT INTO jefes_finales (materia_id, nombre, hp_total) VALUES (m1, 'Parcial 2', 3) RETURNING id INTO j2;
+    INSERT INTO sesiones (materia_id, jefe_id, inicio, fin, estado)
+    VALUES (m1, j2, now() - interval '25 minutes', now(), 'completada') RETURNING id INTO s2;
+    INSERT INTO quizzes (sesion_id) VALUES (s2) RETURNING id INTO q1;
+
+    -- 24. Un solo quiz por sesión (RF-15)
+    BEGIN
+        INSERT INTO quizzes (sesion_id) VALUES (s2);
+        RAISE EXCEPTION 'FALLO: aceptó dos quizzes para la misma sesión';
+    EXCEPTION WHEN unique_violation THEN
+        RAISE NOTICE 'OK 24. segundo quiz de la misma sesión rechazado';
+    END;
+
+    -- 25. Aciertos entre 0 y 5, y solo junto con la hora de respuesta
+    BEGIN
+        UPDATE quizzes SET aciertos = 6, respondido_en = now() WHERE id = q1;
+        RAISE EXCEPTION 'FALLO: aceptó 6 aciertos';
+    EXCEPTION WHEN check_violation THEN
+        RAISE NOTICE 'OK 25a. 6 aciertos rechazados';
+    END;
+    BEGIN
+        UPDATE quizzes SET aciertos = 4 WHERE id = q1;
+        RAISE EXCEPTION 'FALLO: aceptó aciertos sin hora de respuesta';
+    EXCEPTION WHEN check_violation THEN
+        RAISE NOTICE 'OK 25b. aciertos sin hora de respuesta rechazados';
+    END;
+
+    -- 26. La opción correcta es un índice de 0 a 3
+    BEGIN
+        INSERT INTO quiz_preguntas (quiz_id, orden, enunciado, opcion_0, opcion_1, opcion_2, opcion_3, correcta)
+        VALUES (q1, 0, '¿2 + 2?', '4', '3', '5', '22', 4);
+        RAISE EXCEPTION 'FALLO: aceptó la opción correcta 4';
+    EXCEPTION WHEN check_violation THEN
+        RAISE NOTICE 'OK 26. opción correcta fuera de 0 a 3 rechazada';
+    END;
+
+    -- 27. Daño extra (RF-16): sin responder o con 3 aciertos no hay; con 4 el jefe pierde 1 HP más.
+    --     pomodoros_recibidos no cambia: el quiz no cuenta como pomodoro.
+    SELECT hp_actual INTO v_int FROM v_estado_jefe WHERE jefe_id = j2;
+    IF v_int <> 2 THEN
+        RAISE EXCEPTION 'FALLO: un quiz sin responder hizo daño (HP %)', v_int;
+    END IF;
+    UPDATE quizzes SET aciertos = 3, respondido_en = now() WHERE id = q1;
+    PERFORM 1 FROM v_estado_jefe
+    WHERE jefe_id = j2 AND hp_actual = 2 AND dano_quiz = 0 AND pomodoros_recibidos = 1;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'FALLO: con 3 aciertos el jefe no debía recibir daño extra';
+    END IF;
+    UPDATE quizzes SET aciertos = 4 WHERE id = q1;
+    PERFORM 1 FROM v_estado_jefe
+    WHERE jefe_id = j2 AND hp_actual = 1 AND dano_quiz = 1 AND pomodoros_recibidos = 1 AND NOT derrotado;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'FALLO: con 4 aciertos el jefe debía quedar en HP 1 (1 pomodoro + 1 de quiz)';
+    END IF;
+    -- un segundo pomodoro lo derrota: 2 pomodoros + 1 de quiz = 3 HP
+    INSERT INTO sesiones (materia_id, jefe_id, inicio, fin, estado)
+    VALUES (m1, j2, now() - interval '25 minutes', now(), 'completada');
+    PERFORM 1 FROM v_estado_jefe
+    WHERE jefe_id = j2 AND hp_actual = 0 AND derrotado AND pomodoros_recibidos = 2;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'FALLO: 2 pomodoros y un quiz con 4 aciertos debían derrotar a un jefe de HP 3';
+    END IF;
+    RAISE NOTICE 'OK 27. quiz: 3 aciertos no dañan, 4 quitan 1 HP extra y no cuentan como pomodoro';
 
     RAISE NOTICE '=== Todas las pruebas pasaron ===';
 END;
