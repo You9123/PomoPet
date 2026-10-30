@@ -13,13 +13,131 @@ Proyecto de Paradigmas de Programación, UNA, II Semestre 2026.
 
 ## Cómo correrlo
 
+### Requisitos
+
+| Programa | Versión | Para qué |
+| --- | --- | --- |
+| Git | cualquiera | descargar el código |
+| Docker Desktop | reciente | corre PostgreSQL y el backend (no hay que instalar PostgreSQL ni Python) |
+| Node.js | 22.18 o superior (o 24.12+) | frontend |
+
 > **Windows:** Docker Desktop requiere WSL 2. Instalarlo con `wsl --install` en PowerShell (Administrador) y reiniciar.
+> **Mac:** elegir la versión de Docker Desktop que corresponda al chip (Apple Silicon o Intel).
+
+### Pasos
 
 ```bash
-cp .env.example .env
+git clone https://github.com/You9123/PomoPet.git
+cd PomoPet
+git checkout develop
+cp .env.example .env           # y cambiar POSTGRES_PASSWORD y JWT_SECRET (texto largo y aleatorio)
 docker compose up --build      # BD + API en http://localhost:8000/docs
+```
+
+En **otra terminal**:
+
+```bash
 cd frontend && npm install && npm run dev   # http://localhost:5173
 ```
+
+La primera vez Docker descarga las imágenes y carga `database/init/*.sql`; el backend espera a que
+la BD esté lista. Para detener: `Ctrl + C`.
+
+### Inteligencia artificial
+
+La mascota da consejos de estudio (RF-14) y se puede golpear al Jefe Final con un quiz generado de tus apuntes
+(RF-15, RF-16). Con `docker compose` funciona sin clave ni internet, con respuestas de prueba (`IA_PROVEEDOR=falso`).
+Para usar la IA real, poner en el `.env` `IA_PROVEEDOR=gemini` e `IA_API_KEY` con una clave de Google AI Studio.
+Detalles y privacidad en `docs/ia.md`.
+
+### Probar que todo funciona
+
+```bash
+docker compose exec backend pytest -v      # backend (con `docker compose up` corriendo)
+cd frontend && npm test                    # frontend
+```
+
+Las reglas del esquema (`database/tests/pruebas_reglas.sql`) se explican en `docs/modelo-datos.md`;
+el CI también las ejecuta en cada PR.
+
+### Pruebas de integración (las tres capas juntas)
+
+Usan [Playwright](https://playwright.dev): abre un Chrome real y recorre la app como una persona.
+Vue llama a FastAPI y FastAPI guarda en PostgreSQL; nada es falso. Están en `frontend/e2e/`:
+
+| Prueba | Qué recorre |
+| --- | --- |
+| `flujo-completo.spec.js` | Registro con mascota → crear materia → pomodoro con una pausa → 100 XP en **Progreso** y en **Materias** |
+| `cancelar.spec.js` | Iniciar y cancelar una sesión → aparece en el historial como cancelada y sin XP |
+| `coach.spec.js` | Pedir un consejo → se ve en el globo de la mascota, sigue al recargar y el contador baja de 3 a 0 |
+| `quiz.spec.js` | Pomodoro contra un Jefe → quiz con los apuntes → con **4 aciertos** el jefe pierde 1 HP extra y el XP sigue en 100; con **3 aciertos** no hay daño extra |
+
+Con `docker compose up` corriendo, en otra terminal:
+
+```bash
+cd frontend
+npx playwright install chromium   # solo la primera vez: descarga el navegador
+npm run test:e2e                  # levanta Vite solo si no está corriendo
+```
+
+- **Para no esperar 25 minutos**, la prueba "viaja en el tiempo": mueve en la BD la hora de inicio de
+  la sesión 26 minutos hacia atrás (lo mismo que `retrasar_inicio` en las pruebas del backend). El
+  backend sigue validando los 25 minutos efectivos igual que siempre; el código de la app no cambia.
+- Cada prueba crea su propio usuario (`e2e-…@pomopet.test`) y lo borra al terminar: tus datos no se tocan.
+- Para ver el navegador mientras corre: `npm run test:e2e -- --headed`. Para ir paso a paso: `-- --ui`.
+- Si una prueba falla, Playwright guarda una captura y la traza en `frontend/test-results/`
+  (abrirla con `npx playwright show-trace <archivo .zip>`).
+- El CI las corre en cada PR (job `integration-tests`), con `docker compose` como aquí.
+- **Coach y quiz sin gastar cupo:** con `docker compose` el backend usa la IA falsa (`IA_PROVEEDOR=falso`), que no
+  sale a internet. El consejo siempre es el mismo texto y en el quiz la correcta siempre es la primera opción.
+  Si tu `.env` tiene `IA_PROVEEDOR=gemini`, quita esa línea (o ponla en `falso`) antes de correr las pruebas.
+
+#### Probar el coach y el quiz con la IA real (a mano)
+
+Las pruebas automáticas nunca usan la IA real. Para probarla una vez:
+
+1. Crear una clave propia en [Google AI Studio](https://aistudio.google.com/apikey), en un proyecto propio
+   (el cupo gratuito es por proyecto).
+2. En el `.env` de la raíz: `IA_PROVEEDOR=gemini`, `IA_API_KEY=<tu clave>` e `IA_MODELO=gemini-3.5-flash-lite`.
+3. `docker compose up --build` y entrar a `http://localhost:5173`.
+4. En **Pomodoro**: pulsar «Pedir consejo» (gasta 1 solicitud).
+5. Iniciar un pomodoro contra un jefe y, para no esperar 25 minutos, adelantarlo y recargar la página:
+
+   ```bash
+   docker compose exec db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "UPDATE sesiones SET inicio = now() - interval '"'"'26 minutes'"'"' WHERE estado = '"'"'en_curso'"'"'"'
+   ```
+
+   Pulsar «Golpe extra: quiz», pegar al menos 200 caracteres de apuntes y responder (gasta 1 o 2 solicitudes).
+6. Al terminar, volver a `IA_PROVEEDOR=falso` y borrar la clave del `.env`.
+
+### Si cambia el esquema de la BD
+
+PostgreSQL solo carga `database/init/` cuando el volumen está vacío. Después de un `git pull` que
+toque `database/init/`, recrear la BD (**borra los datos locales**):
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+### Problemas comunes
+
+| Síntoma | Causa y solución |
+| --- | --- |
+| `Cannot connect to the Docker daemon` | Docker Desktop está cerrado: abrirlo y esperar a que diga "Engine running" |
+| `Falta JWT_SECRET en el .env` | No se creó el `.env` o esa línea está vacía |
+| Puerto 5432 u 8000 ocupado | Hay otro PostgreSQL o servicio local usándolo: cerrarlo |
+| `/docs` abre pero sin botones (Try it out, Authorize) | La página carga sus scripts de `cdn.jsdelivr.net`: revisar bloqueadores, VPN o red |
+| `401` en `/docs` | Falta el token: registrarse en `POST /api/auth/registro`, pulsar **Authorize** y pegar el `access_token` sin la palabra `Bearer` |
+| `npm install` avisa de la versión de Node | Instalar Node 22.18+ o 24.12+ |
+
+### Checklist para cada integrante (issue #2)
+
+- [ ] `docker compose up --build` termina sin errores y `http://localhost:8000/docs` abre
+- [ ] `http://localhost:5173` abre y se puede crear una cuenta
+- [ ] `docker compose exec backend pytest -v` pasa
+- [ ] `cd frontend && npm test` pasa
+- [ ] `cd frontend && npm run test:e2e` pasa (con `docker compose up` corriendo)
 
 ## Equipo
 

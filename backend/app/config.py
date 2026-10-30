@@ -1,0 +1,28 @@
+import os
+
+# Se leen del entorno (docker-compose las toma del archivo .env).
+# El valor por defecto solo sirve para desarrollo local.
+DATABASE_URL = os.environ.get("DATABASE_URL") or "postgresql://pomopet:cambia_esto@localhost:5432/pomopet"
+
+# Sin valor por defecto: con una clave conocida cualquiera podría fabricar tokens.
+# Si falta, el backend no arranca (mejor que arrancar inseguro).
+JWT_SECRET = os.environ.get("JWT_SECRET", "")
+if len(JWT_SECRET) < 32 or JWT_SECRET == "cambia_esto_por_un_texto_largo_y_aleatorio":
+    raise RuntimeError(
+        "Falta JWT_SECRET en el .env (mínimo 32 caracteres y distinto al de .env.example). "
+        "Ver docs/autenticacion.md"
+    )
+    
+JWT_HORAS = int(os.environ.get("JWT_HORAS") or 24)
+
+# IA (RNF-10, docs/ia.md). A diferencia de JWT_SECRET, sin clave el backend arranca igual:
+# solo dejan de estar disponibles las funciones de IA. IA_PROVEEDOR=falso responde sin salir a internet.
+IA_PROVEEDOR = os.environ.get("IA_PROVEEDOR") or "gemini"
+IA_API_KEY = os.environ.get("IA_API_KEY") or ""
+IA_MODELO = os.environ.get("IA_MODELO") or "gemini-3.5-flash-lite"
+
+
+# Orígenes (URL del frontend) que pueden llamar a la API desde el navegador (CORS).
+# El frontend local (Vite) siempre está permitido. En producción se agrega el dominio
+# publicado con CORS_ORIGINS, separando varios con coma. Ej.: https://pomopet.onrender.com
+ORIGENES_CORS = ["http://localhost:5173"] + [o.strip().rstrip("/") for o in (os.environ.get("CORS_ORIGINS") or "").split(",") if o.strip()]

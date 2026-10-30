@@ -10,17 +10,30 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d
+    # El backend espera a que PostgreSQL acepte conexiones (la primera vez tarda en cargar el esquema).
+    # -h localhost: mientras carga database/init/ hay un servidor temporal que solo escucha por socket
+    # local; por TCP solo responde el servidor real, cuando el esquema ya está cargado.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   backend:
     build: ./backend
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en el .env (ver .env.example)}
+      IA_PROVEEDOR: ${IA_PROVEEDOR:-falso}
+      IA_API_KEY: ${IA_API_KEY:-}
+      IA_MODELO: ${IA_MODELO:-}
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
 volumes:
   db_data:

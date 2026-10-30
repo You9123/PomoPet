@@ -1,3 +1,4 @@
+import '@fontsource/press-start-2p/latin-400.css'
 import './assets/main.css'
 
 import { createApp } from 'vue'

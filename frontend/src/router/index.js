@@ -10,6 +10,17 @@ const router = createRouter({
       component: HomeView,
     },
     {
+      path: '/materias',
+      name: 'materias',
+      component: () => import('../views/MateriasView.vue'),
+    },
+    {
+      path: '/estadisticas',
+      name: 'estadisticas',
+      // Chart.js solo se descarga al abrir esta pantalla
+      component: () => import('../views/EstadisticasView.vue'),
+    },
+    {
       path: '/about',
       name: 'about',
       // route level code-splitting

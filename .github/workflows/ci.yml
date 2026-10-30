@@ -9,6 +9,24 @@ on:
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
+    # PostgreSQL de prueba para las pruebas que usan la BD
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pomopet
+          POSTGRES_PASSWORD: pomopet_ci
+          POSTGRES_DB: pomopet
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pomopet"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://pomopet:pomopet_ci@localhost:5432/pomopet
+      JWT_SECRET: secreto-solo-para-el-ci-de-github-actions
     defaults:
       run:
         working-directory: backend
@@ -17,8 +35,79 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Cargar el esquema de la BD
+        run: for f in ../database/init/*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -f "$f"; done
       - run: pip install -r requirements.txt
       - run: pytest -v
+
+  database-tests:
+    runs-on: ubuntu-latest
+    # Issue #16: un cambio en el esquema que rompa una regla de la BD no se puede integrar
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pomopet
+          POSTGRES_PASSWORD: pomopet_ci
+          POSTGRES_DB: pomopet
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pomopet"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://pomopet:pomopet_ci@localhost:5432/pomopet
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cargar el esquema de la BD (database/init en orden)
+        run: for f in database/init/*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -f "$f"; done
+      - name: Probar las reglas del esquema
+        # pruebas_reglas.sql usa ON_ERROR_STOP: si una regla falla, psql sale con error y el job se pone rojo
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/pruebas_reglas.sql
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    # Issue #12: un navegador real recorre la app con el backend y la BD de docker compose
+    steps:
+      - uses: actions/checkout@v4
+      - name: Crear el .env de prueba
+        run: |
+          cat > .env <<'EOF'
+          POSTGRES_USER=pomopet
+          POSTGRES_PASSWORD=pomopet_ci
+          POSTGRES_DB=pomopet
+          JWT_SECRET=secreto-solo-para-el-ci-de-github-actions
+          # Issue #43: el coach y el quiz usan la IA falsa, sin clave real ni internet
+          IA_PROVEEDOR=falso
+          IA_API_KEY=
+          EOF
+      - name: Levantar la BD y el backend
+        run: docker compose up -d --build --wait
+      - name: Esperar a que la API responda
+        run: timeout 90 bash -c 'until curl -sf http://localhost:8000/docs > /dev/null; do sleep 2; done'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+        working-directory: frontend
+      - name: Instalar Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Pruebas de integración
+        run: npm run test:e2e
+        working-directory: frontend
+      - name: Logs del backend (si algo falló)
+        if: failure()
+        run: docker compose logs backend
+      - name: Guardar el reporte de Playwright (si algo falló)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-playwright
+          path: frontend/playwright-report/
+          retention-days: 7
 
   frontend-build:
     runs-on: ubuntu-latest
@@ -31,4 +120,5 @@ jobs:
         with:
           node-version: "22"
       - run: npm ci
+      - run: npm test
       - run: npm run build
