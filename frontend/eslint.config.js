@@ -20,6 +20,16 @@ export default defineConfig([
     },
   },
 
+  // Pruebas de integración con Playwright: corren en Node, no en el navegador
+  {
+    files: ['e2e/**/*.js', 'playwright.config.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+
   js.configs.recommended,
   ...pluginVue.configs['flat/essential'],
 
