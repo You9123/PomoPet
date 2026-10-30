@@ -6,8 +6,8 @@ import { POMODOROS_PARA_DESCANSO_LARGO, formatear } from '../utils/temporizador.
 import { useAuthStore } from '../stores/auth.js'
 import { useMateriasStore } from '../stores/materias.js'
 import { usePomodoroStore } from '../stores/pomodoro.js'
-import ConsejoMascota from './ConsejoMascota.vue'
 import JefeBarraVida from './JefeBarraVida.vue'
+import ConsejoMascota from './ConsejoMascota.vue'
 import MascotaSprite from './MascotaSprite.vue'
 import TomatePixel from './TomatePixel.vue'
 
