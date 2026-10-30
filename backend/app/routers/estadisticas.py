@@ -199,21 +199,8 @@ def armar_por_dia(filas: list[dict], materias: dict[int, dict], zona: str) -> Po
     return PorDia(zona=zona, dias=dias, series=series, completados=completados, cancelados=cancelados)
 
 
-# ---------- Endpoints ----------
-
-@router.get("", response_model=Estadisticas)
-def estadisticas(
-    dias: int = Query(7, ge=1, le=MAX_DIAS, description="Cuántos días (hasta hoy) incluye `por_dia`"),
-    zona: str = Query(ZONA_POR_DEFECTO, max_length=64, description="Zona horaria IANA del usuario"),
-    usuario_id: int = Depends(usuario_actual),
-    conn=CONEXION,
-):
-    """RF-08: progreso general, XP por materia y minutos estudiados por día.
-
-    El resumen y `por_materia` cuentan todo el historial; `por_dia` solo los últimos `dias` días.
-    Las sesiones canceladas no dan XP ni suman a `minutos_estudiados`, pero se cuentan aparte.
-    """
-    exigir_zona(conn, zona)
+def calcular_estadisticas(conn, usuario_id: int, dias: int, zona: str) -> Estadisticas:
+    """Las estadísticas del usuario. También las usa el coach (`routers/coach.py`). La zona ya debe estar validada."""
     parametros = {"usuario": usuario_id, "dias": dias, "zona": zona}
 
     r = conn.execute(SQL_RESUMEN, parametros).fetchone()
@@ -234,6 +221,24 @@ def estadisticas(
     filas = conn.execute(SQL_POR_DIA, parametros).fetchall()
     materias = {m.id: {"nombre": m.nombre, "color": m.color} for m in por_materia}
     return Estadisticas(resumen=resumen, por_materia=por_materia, por_dia=armar_por_dia(filas, materias, zona))
+
+
+# ---------- Endpoints ----------
+
+@router.get("", response_model=Estadisticas)
+def estadisticas(
+    dias: int = Query(7, ge=1, le=MAX_DIAS, description="Cuántos días (hasta hoy) incluye `por_dia`"),
+    zona: str = Query(ZONA_POR_DEFECTO, max_length=64, description="Zona horaria IANA del usuario"),
+    usuario_id: int = Depends(usuario_actual),
+    conn=CONEXION,
+):
+    """RF-08: progreso general, XP por materia y minutos estudiados por día.
+
+    El resumen y `por_materia` cuentan todo el historial; `por_dia` solo los últimos `dias` días.
+    Las sesiones canceladas no dan XP ni suman a `minutos_estudiados`, pero se cuentan aparte.
+    """
+    exigir_zona(conn, zona)
+    return calcular_estadisticas(conn, usuario_id, dias, zona)
 
 
 @router.get("/historial", response_model=Historial)
