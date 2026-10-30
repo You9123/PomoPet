@@ -6,14 +6,17 @@ import { POMODOROS_PARA_DESCANSO_LARGO, formatear } from '../utils/temporizador.
 import { useAuthStore } from '../stores/auth.js'
 import { useMateriasStore } from '../stores/materias.js'
 import { usePomodoroStore } from '../stores/pomodoro.js'
+import { useQuizStore } from '../stores/quiz.js'
 import JefeBarraVida from './JefeBarraVida.vue'
 import ConsejoMascota from './ConsejoMascota.vue'
 import MascotaSprite from './MascotaSprite.vue'
+import QuizJefe from './QuizJefe.vue'
 import TomatePixel from './TomatePixel.vue'
 
 const auth = useAuthStore()
 const materias = useMateriasStore()
 const pomodoro = usePomodoroStore()
+const quiz = useQuizStore()
 
 const TITULOS = {
   inactivo: 'Listo para estudiar',
@@ -188,7 +191,10 @@ watch(
       </form>
     </div>
 
-    <JefeBarraVida v-if="pomodoro.jefe" :jefe="pomodoro.jefe" />
+    <!-- En el resultado del quiz la barra ya está dentro del panel, con la animación del golpe -->
+    <JefeBarraVida v-if="pomodoro.jefe && quiz.paso !== 'resultado'" :jefe="pomodoro.jefe" />
+
+    <QuizJefe v-if="!enSesion" />
 
     <p v-if="materias.error && pomodoro.fase === 'inactivo'" class="aviso-error" role="alert">
       {{ materias.error }}
