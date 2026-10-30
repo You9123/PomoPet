@@ -8,9 +8,9 @@
 - `GET /api/materias` y `/api/materias/{id}` devuelven `nivel` y `rango`; `GET /api/me` devuelve `xp_total`, `nivel` y `etapa` de la mascota.
 - La pantalla de materias muestra el rango y el nivel de cada una, y el temporizador muestra la etapa y el nivel de la mascota (se actualizan al completar un pomodoro).
 - Sprites por etapa de evolución: cada mascota tiene un dibujo muy distinto por etapa: cría (diminuta, dentro de un cascarón), joven (el de siempre), adulta (capa roja y bufanda que ondea) y legendaria (alas, corona con gemas, capa real y contorno dorado), en todos sus colores: 360 sprites generados por código. Los PNG pasaron a `public/mascotas/<especie>/<variante>/<etapa>/<estado>.png`; el registro muestra a las mascotas como cría. Prueba nueva: `frontend/tools/sprites.test.js`.
-- Pruebas de los bordes de cada umbral en `backend/tests/test_niveles.py`.
 - Panel de estadísticas (#11, RF-08): `GET /api/estadisticas` (resumen, XP y minutos por materia, minutos por día en la hora local del usuario) y `GET /api/estadisticas/historial` (sesiones completadas y canceladas, paginadas y filtrables), con SQL directo. Vista nueva `v_historial_sesiones` (tiempo efectivo de cada sesión terminada) y migración `002_vista_historial_sesiones.sql` para la BD de Render. Prueba 23 en `pruebas_reglas.sql` y `backend/tests/test_estadisticas.py`.
 - Pantalla de estadísticas en `/estadisticas` (menú **Progreso**): tarjetas de resumen, gráfico de barras apiladas por materia con Chart.js (`vue-chartjs`) para 7 o 30 días, e historial con filtro y páginas (`docs/estadisticas.md`).
+- Pruebas de los bordes de cada umbral en `backend/tests/test_niveles.py`.
 
 ### Notas
 
