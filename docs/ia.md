@@ -12,6 +12,9 @@ Se eligió **Google Gemini**, con su plan gratuito, porque el proyecto no tiene 
 demostración hace pocas solicitudes. Se usa la API de Interactions por REST (`POST /v1beta/interactions`),
 con `httpx`, que ya estaba en el proyecto.
 
+Se usa `gemini-3.5-flash-lite`: el 2026-10-30 respondió bien a texto y quiz, mientras `gemini-3.8-flash` daba `503` por alta demanda
+o agotaba el tiempo de espera en todos los intentos. Se cambia con `IA_MODELO`, sin tocar código.
+
 Los límites del plan gratuito cambian con el tiempo y dependen del proyecto de Google: se consultan en
 [AI Studio](https://aistudio.google.com/rate-limit). Si se agota el cupo, la app sigue funcionando (ver abajo).
 
@@ -21,7 +24,7 @@ Los límites del plan gratuito cambian con el tiempo y dependen del proyecto de 
 | --- | --- | --- |
 | `IA_PROVEEDOR` | `gemini` o `falso` | `gemini` en el backend; `falso` en `docker compose` |
 | `IA_API_KEY` | Clave de Google AI Studio. Nunca se sube al repositorio | vacía |
-| `IA_MODELO` | Modelo de Gemini | `gemini-3.8-flash` |
+| `IA_MODELO` | Modelo de Gemini | `gemini-3.5-flash-lite` |
 
 - **Sin clave** el backend arranca igual: las funciones de IA informan que no están disponibles.
 - **`IA_PROVEEDOR=falso`** responde siempre lo mismo, sin internet ni clave. Es el que usan `pytest`, el CI y las

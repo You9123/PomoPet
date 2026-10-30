@@ -19,7 +19,7 @@ JWT_HORAS = int(os.environ.get("JWT_HORAS") or 24)
 # solo dejan de estar disponibles las funciones de IA. IA_PROVEEDOR=falso responde sin salir a internet.
 IA_PROVEEDOR = os.environ.get("IA_PROVEEDOR") or "gemini"
 IA_API_KEY = os.environ.get("IA_API_KEY") or ""
-IA_MODELO = os.environ.get("IA_MODELO") or "gemini-3.8-flash"
+IA_MODELO = os.environ.get("IA_MODELO") or "gemini-3.5-flash-lite"
 
 
 # Orígenes (URL del frontend) que pueden llamar a la API desde el navegador (CORS).
