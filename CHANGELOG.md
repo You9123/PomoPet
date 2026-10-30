@@ -1,5 +1,17 @@
 # Bitácora de cambios
 
+## [Inteligencia artificial] - sin publicar
+
+Requisito agregado por el profesor después de cerrar el Release Final.
+
+### Agregado
+
+- Requerimientos nuevos en el documento de alcance (#44): RF-14 (coach de la mascota), RF-15 (quiz con IA), RF-16 (daño extra al Jefe) y RNF-10 (la IA solo desde el backend).
+
+### Cambiado
+
+- RF-06 y RF-12 admiten el daño extra del quiz; antes el HP bajaba solo con pomodoros.
+
 ## [Release Final] - 2026-10-30
 
 ### Agregado

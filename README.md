@@ -43,6 +43,13 @@ cd frontend && npm install && npm run dev   # http://localhost:5173
 La primera vez Docker descarga las imágenes y carga `database/init/*.sql`; el backend espera a que
 la BD esté lista. Para detener: `Ctrl + C`.
 
+### Inteligencia artificial
+
+La mascota da consejos de estudio (RF-14) y se puede golpear al Jefe Final con un quiz generado de tus apuntes
+(RF-15, RF-16). Con `docker compose` funciona sin clave ni internet, con respuestas de prueba (`IA_PROVEEDOR=falso`).
+Para usar la IA real, poner en el `.env` `IA_PROVEEDOR=gemini` e `IA_API_KEY` con una clave de Google AI Studio.
+Detalles y privacidad en `docs/ia.md`.
+
 ### Probar que todo funciona
 
 ```bash
