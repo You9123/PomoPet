@@ -67,6 +67,45 @@ jobs:
         # pruebas_reglas.sql usa ON_ERROR_STOP: si una regla falla, psql sale con error y el job se pone rojo
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/pruebas_reglas.sql
 
+  integration-tests:
+    runs-on: ubuntu-latest
+    # Issue #12: un navegador real recorre la app con el backend y la BD de docker compose
+    steps:
+      - uses: actions/checkout@v4
+      - name: Crear el .env de prueba
+        run: |
+          cat > .env <<'EOF'
+          POSTGRES_USER=pomopet
+          POSTGRES_PASSWORD=pomopet_ci
+          POSTGRES_DB=pomopet
+          JWT_SECRET=secreto-solo-para-el-ci-de-github-actions
+          EOF
+      - name: Levantar la BD y el backend
+        run: docker compose up -d --build --wait
+      - name: Esperar a que la API responda
+        run: timeout 90 bash -c 'until curl -sf http://localhost:8000/docs > /dev/null; do sleep 2; done'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+        working-directory: frontend
+      - name: Instalar Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Pruebas de integración
+        run: npm run test:e2e
+        working-directory: frontend
+      - name: Logs del backend (si algo falló)
+        if: failure()
+        run: docker compose logs backend
+      - name: Guardar el reporte de Playwright (si algo falló)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-playwright
+          path: frontend/playwright-report/
+          retention-days: 7
+
   frontend-build:
     runs-on: ubuntu-latest
     defaults:
