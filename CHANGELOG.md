@@ -26,6 +26,7 @@ Requisito agregado por el profesor después de cerrar el Release Final.
 
 - En **Materias**, el nombre que se escribía mientras cargaba la lista se borraba al terminar la carga (#43). Ahora solo se propone el color.
 - Las preguntas del quiz salían sin tildes ni signos de apertura (#54): el prompt ahora pide ortografía correcta.
+- El documento de alcance no coincidía con lo implementado: los logros pasan a «fuera del alcance» (solo existen sus tablas), el último rango es «Maestro» y el temporizador deja de llamarse configurable. También menciona bcrypt, JWT, Playwright y la publicación en Render.
 
 ### Notas
 
